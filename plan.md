@@ -11,11 +11,12 @@ A local-first app to track subscriptions, measure actual usage, and make data-dr
 | Layer | Choice | Rationale |
 |-------|--------|-----------|
 | **Runtime** | Bun | Fast, TypeScript-native, built-in SQLite bindings |
-| **Framework** | Next.js 14+ (App Router) | Familiar, great DX, easy to add API routes for integrations |
-| **Database** | SQLite via `better-sqlite3` or `bun:sqlite` | Local-first, zero config, portable, easy backups |
+| **Framework** | TanStack Start | Full-stack React framework with type-safe routing, server functions, SSR/SPA flexibility |
+| **Router** | TanStack Router | File-based routing, type-safe params/search, built-in data loading |
+| **Database** | SQLite via `bun:sqlite` | Local-first, zero config, portable, easy backups |
 | **ORM** | Drizzle ORM | Type-safe, lightweight, excellent SQLite support |
 | **UI** | React + Tailwind + shadcn/ui | Fast to build, good defaults, accessible components |
-| **State** | Zustand + React Query | Simple state management, caching for any API calls |
+| **Data Fetching** | TanStack Query | Built into Start, handles caching, background refetching, optimistic updates |
 | **Charts** | Recharts or Tremor | Usage trends, spending visualizations |
 | **Date Handling** | date-fns | Lightweight, tree-shakeable |
 
@@ -23,7 +24,7 @@ A local-first app to track subscriptions, measure actual usage, and make data-dr
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                        Next.js App                          │
+│                      TanStack Start App                      │
 ├─────────────────────────────────────────────────────────────┤
 │  UI Layer (React + shadcn/ui)                               │
 │  ├── Dashboard (overview, alerts, quick actions)            │
@@ -31,11 +32,16 @@ A local-first app to track subscriptions, measure actual usage, and make data-dr
 │  ├── Analytics (trends, comparisons, ROI)                   │
 │  └── Decisions (recommendations, cancellation tracker)      │
 ├─────────────────────────────────────────────────────────────┤
-│  API Routes (/api/*)                                        │
-│  ├── /api/subscriptions (CRUD)                              │
-│  ├── /api/usage (log usage, fetch stats)                    │
-│  ├── /api/integrations (OAuth callbacks, webhooks)          │
-│  └── /api/analyze (trigger analysis, get recommendations)   │
+│  TanStack Router (File-based, type-safe)                    │
+│  ├── Route loaders (server-side data fetching)              │
+│  ├── Route actions (mutations via server functions)         │
+│  └── Search params validation (type-safe filters/sorting)   │
+├─────────────────────────────────────────────────────────────┤
+│  Server Functions (createServerFn)                          │
+│  ├── subscriptions.server.ts (CRUD operations)              │
+│  ├── usage.server.ts (log usage, fetch stats)               │
+│  ├── integrations.server.ts (OAuth, webhooks)               │
+│  └── analyze.server.ts (recommendations engine)             │
 ├─────────────────────────────────────────────────────────────┤
 │  Service Layer                                              │
 │  ├── SubscriptionService (business logic)                   │
@@ -47,6 +53,15 @@ A local-first app to track subscriptions, measure actual usage, and make data-dr
 │  └── subscriptions.db (local file)                          │
 └─────────────────────────────────────────────────────────────┘
 ```
+
+### Why TanStack Start?
+
+- **Type-safe routing**: Params, search params, and loader data are fully typed end-to-end
+- **Server functions**: Call server code directly from components without manual API routes
+- **Flexible rendering**: SSR, SPA, or hybrid - choose per route
+- **Built-in TanStack Query**: First-class integration for caching and mutations
+- **File-based routing**: Intuitive structure, automatic code splitting
+- **Modern DX**: Fast refresh, great error messages, Vite-powered
 
 ### Why Local-First?
 
@@ -63,7 +78,7 @@ A local-first app to track subscriptions, measure actual usage, and make data-dr
 ### Core Schema (Drizzle)
 
 ```typescript
-// src/db/schema.ts
+// app/lib/db/schema.ts
 import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core';
 
 // Main subscription record
@@ -199,7 +214,7 @@ export const integrations = sqliteTable('integrations', {
 ### Key Indexes
 
 ```typescript
-// src/db/indexes.ts
+// app/lib/db/schema.ts (add to schema file)
 export const subscriptionsByStatus = index('idx_subscriptions_status').on(subscriptions.status);
 export const subscriptionsByNextBilling = index('idx_subscriptions_next_billing').on(subscriptions.nextBillingDate);
 export const usageEventsBySubscription = index('idx_usage_events_subscription').on(usageEvents.subscriptionId);
@@ -278,11 +293,12 @@ Must-haves to start using the app yourself:
 
 ```
 Milestone 1.1: Project Setup
-├── Initialize Next.js with Bun
-├── Set up Drizzle + SQLite
+├── Initialize TanStack Start with Bun
+├── Set up Drizzle + SQLite (bun:sqlite)
 ├── Create base schema (subscriptions table only)
 ├── Set up shadcn/ui components
-└── Create basic layout shell
+├── Create root layout with navigation
+└── Configure TanStack Query provider
 
 Milestone 1.2: Subscription Management
 ├── Subscription list page
@@ -425,7 +441,7 @@ Milestone 4.3: ROI Analysis
 **Implementation Pattern:**
 
 ```typescript
-// src/lib/integrations/spotify.ts
+// app/lib/integrations/spotify.ts
 interface SpotifyIntegration {
   authenticate(): Promise<void>;
   fetchRecentlyPlayed(since: Date): Promise<PlayedTrack[]>;
@@ -471,7 +487,7 @@ export class SpotifyTracker implements SpotifyIntegration {
 ├─────────────────────────────────────────────────────────────┤
 │  Background Script                                           │
 │  ├── Aggregate events                                        │
-│  ├── Batch send to local app API (localhost:3000/api/usage)  │
+│  ├── Batch send to local server (localhost:3000)             │
 │  └── Handle offline queuing                                  │
 ├─────────────────────────────────────────────────────────────┤
 │  Popup                                                       │
@@ -509,7 +525,7 @@ Many services send usage summary emails:
 **Implementation Approach:**
 
 ```typescript
-// src/lib/integrations/email-parser.ts
+// app/lib/integrations/email-parser.ts
 interface EmailParser {
   serviceId: string;
   patterns: {
@@ -544,21 +560,29 @@ For services without automation, make manual logging frictionless:
 5. **Default Patterns**: "I always use Gym on Mon/Wed/Fri" - auto-suggest
 
 ```typescript
-// Quick usage logging
-export function QuickLogButton({ subscription }: Props) {
-  const logUsage = useMutation(/* ... */);
+// app/components/subscriptions/quick-log-button.tsx
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { logUsage } from '~/server/usage.server'
+import { Button } from '~/components/ui/button'
+
+export function QuickLogButton({ subscription }: { subscription: Subscription }) {
+  const queryClient = useQueryClient()
+
+  const mutation = useMutation({
+    mutationFn: () => logUsage({ subscriptionId: subscription.id, quantity: 1 }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['usage', subscription.id] })
+    },
+  })
 
   return (
     <Button
-      onClick={() => logUsage.mutate({
-        subscriptionId: subscription.id,
-        quantity: 1,
-        source: 'manual'
-      })}
+      onClick={() => mutation.mutate()}
+      disabled={mutation.isPending}
     >
-      ✓ Used today
+      {mutation.isPending ? 'Logging...' : '✓ Used today'}
     </Button>
-  );
+  )
 }
 ```
 
@@ -772,7 +796,7 @@ const categoryBenchmarks: Record<string, { costPerUse: number; unit: string }> =
 Build an MCP server so AI assistants can query your subscription data:
 
 ```typescript
-// src/mcp/subscription-server.ts
+// mcp/subscription-server.ts
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 const server = new McpServer({
@@ -824,28 +848,36 @@ server.resource('subscriptions://all', async () => {
 
 ```
 subscription-tracker/
-├── src/
-│   ├── app/                      # Next.js app router
-│   │   ├── page.tsx              # Dashboard
-│   │   ├── subscriptions/
-│   │   │   ├── page.tsx          # List view
-│   │   │   ├── [id]/page.tsx     # Detail view
-│   │   │   └── new/page.tsx      # Add form
-│   │   ├── analytics/page.tsx    # Charts and insights
-│   │   ├── decisions/page.tsx    # Recommendations
-│   │   └── api/
-│   │       ├── subscriptions/
-│   │       ├── usage/
-│   │       ├── integrations/
-│   │       └── analyze/
+├── app/
+│   ├── routes/                   # TanStack Router file-based routes
+│   │   ├── __root.tsx            # Root layout (nav, providers)
+│   │   ├── index.tsx             # Dashboard (/)
+│   │   ├── subscriptions.tsx     # Subscriptions layout
+│   │   ├── subscriptions.index.tsx        # List (/subscriptions)
+│   │   ├── subscriptions.$id.tsx          # Detail (/subscriptions/:id)
+│   │   ├── subscriptions.new.tsx          # Add form (/subscriptions/new)
+│   │   ├── analytics.tsx         # Charts and insights (/analytics)
+│   │   └── decisions.tsx         # Recommendations (/decisions)
 │   ├── components/
 │   │   ├── ui/                   # shadcn components
 │   │   ├── subscriptions/
+│   │   │   ├── subscription-card.tsx
+│   │   │   ├── subscription-form.tsx
+│   │   │   └── quick-log-button.tsx
 │   │   ├── charts/
+│   │   │   ├── usage-trend.tsx
+│   │   │   └── spending-breakdown.tsx
 │   │   └── decisions/
+│   │       ├── evaluation-modal.tsx
+│   │       └── recommendation-card.tsx
+│   ├── server/                   # Server functions
+│   │   ├── subscriptions.server.ts
+│   │   ├── usage.server.ts
+│   │   ├── integrations.server.ts
+│   │   └── analyze.server.ts
 │   ├── lib/
 │   │   ├── db/
-│   │   │   ├── index.ts          # Database connection
+│   │   │   ├── index.ts          # Database connection (bun:sqlite)
 │   │   │   ├── schema.ts         # Drizzle schema
 │   │   │   └── migrations/
 │   │   ├── services/
@@ -861,16 +893,91 @@ subscription-tracker/
 │   │       ├── cost.ts           # Cost calculations
 │   │       ├── dates.ts          # Date helpers
 │   │       └── value-score.ts    # Scoring algorithm
-│   └── mcp/                      # MCP server
-│       └── subscription-server.ts
+│   ├── client.tsx                # Client entry
+│   ├── router.tsx                # Router configuration
+│   └── ssr.tsx                   # SSR entry
+├── mcp/                          # MCP server (separate process)
+│   └── subscription-server.ts
 ├── extension/                    # Browser extension
 │   ├── manifest.json
 │   ├── content.ts
 │   ├── background.ts
 │   └── popup/
+├── app.config.ts                 # TanStack Start config
 ├── drizzle.config.ts
 ├── package.json
 └── README.md
+```
+
+### Key TanStack Start Files
+
+```typescript
+// app/routes/__root.tsx - Root layout
+import { createRootRoute, Outlet } from '@tanstack/react-router'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+
+const queryClient = new QueryClient()
+
+export const Route = createRootRoute({
+  component: () => (
+    <QueryClientProvider client={queryClient}>
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <main className="container mx-auto py-6">
+          <Outlet />
+        </main>
+      </div>
+    </QueryClientProvider>
+  ),
+})
+```
+
+```typescript
+// app/routes/subscriptions.$id.tsx - Dynamic route with loader
+import { createFileRoute } from '@tanstack/react-router'
+import { getSubscription } from '~/server/subscriptions.server'
+
+export const Route = createFileRoute('/subscriptions/$id')({
+  loader: async ({ params }) => {
+    return await getSubscription({ id: params.id })
+  },
+  component: SubscriptionDetail,
+})
+
+function SubscriptionDetail() {
+  const subscription = Route.useLoaderData()
+  // Fully typed subscription object
+  return <div>{subscription.name}</div>
+}
+```
+
+```typescript
+// app/server/subscriptions.server.ts - Server functions
+import { createServerFn } from '@tanstack/start'
+import { db } from '~/lib/db'
+import { subscriptions } from '~/lib/db/schema'
+import { eq } from 'drizzle-orm'
+
+export const getSubscription = createServerFn('GET', async ({ id }: { id: string }) => {
+  const result = await db.select().from(subscriptions).where(eq(subscriptions.id, id))
+  return result[0]
+})
+
+export const createSubscription = createServerFn('POST', async (data: NewSubscription) => {
+  const id = nanoid()
+  await db.insert(subscriptions).values({ ...data, id })
+  return { id }
+})
+
+export const logUsage = createServerFn('POST', async ({ subscriptionId, quantity = 1 }) => {
+  await db.insert(usageEvents).values({
+    id: nanoid(),
+    subscriptionId,
+    timestamp: Date.now(),
+    source: 'manual',
+    quantity,
+  })
+})
 ```
 
 ---
@@ -878,27 +985,81 @@ subscription-tracker/
 ## 10. Getting Started Commands
 
 ```bash
-# Initialize project
-bunx create-next-app@latest subscription-tracker --typescript --tailwind --app
+# Initialize TanStack Start project
+bunx gitpod/create-tanstack-app@latest subscription-tracker
 cd subscription-tracker
 
-# Add dependencies
-bun add drizzle-orm better-sqlite3 @types/better-sqlite3
-bun add nanoid date-fns zustand @tanstack/react-query
-bun add -d drizzle-kit
+# Or manually with create-start (if available)
+bun create @tanstack/start subscription-tracker
+cd subscription-tracker
 
-# Add shadcn/ui
-bunx shadcn-ui@latest init
-bunx shadcn-ui@latest add button card input label select dialog table badge
+# Add core dependencies
+bun add drizzle-orm nanoid date-fns
+bun add -d drizzle-kit @types/bun
 
-# Set up database
-mkdir -p src/lib/db
-# Create schema.ts as defined above
-bunx drizzle-kit generate:sqlite
-bunx drizzle-kit push:sqlite
+# Add UI dependencies
+bun add tailwindcss postcss autoprefixer
+bun add class-variance-authority clsx tailwind-merge lucide-react
 
-# Run development
+# Add shadcn/ui (configure for src → app path alias)
+bunx shadcn@latest init
+bunx shadcn@latest add button card input label select dialog table badge tabs
+
+# Add chart library
+bun add recharts
+
+# Set up database directory
+mkdir -p app/lib/db
+
+# Create the schema file (app/lib/db/schema.ts) with content from Section 2
+
+# Generate and apply migrations
+bunx drizzle-kit generate
+bunx drizzle-kit push
+
+# Run development server
 bun dev
+```
+
+### TanStack Start Configuration
+
+```typescript
+// app.config.ts
+import { defineConfig } from '@tanstack/start/config'
+
+export default defineConfig({
+  vite: {
+    resolve: {
+      alias: {
+        '~': './app',
+      },
+    },
+  },
+})
+```
+
+```typescript
+// app/lib/db/index.ts - Database connection with bun:sqlite
+import { Database } from 'bun:sqlite'
+import { drizzle } from 'drizzle-orm/bun-sqlite'
+import * as schema from './schema'
+
+const sqlite = new Database('subscriptions.db')
+export const db = drizzle(sqlite, { schema })
+```
+
+```typescript
+// drizzle.config.ts
+import { defineConfig } from 'drizzle-kit'
+
+export default defineConfig({
+  schema: './app/lib/db/schema.ts',
+  out: './app/lib/db/migrations',
+  dialect: 'sqlite',
+  dbCredentials: {
+    url: 'subscriptions.db',
+  },
+})
 ```
 
 ---
