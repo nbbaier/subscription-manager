@@ -66,12 +66,47 @@ export function initializeDatabase() {
     )
   `);
 
+  // Create integrations table (Phase 3: OAuth tokens for API integrations)
+  db.run(`
+    CREATE TABLE IF NOT EXISTS integrations (
+      id TEXT PRIMARY KEY,
+      service_name TEXT NOT NULL UNIQUE,
+      subscription_id TEXT,
+      access_token TEXT,
+      refresh_token TEXT,
+      token_expires_at INTEGER,
+      scopes TEXT,
+      last_sync_at INTEGER,
+      sync_status TEXT DEFAULT 'disconnected',
+      sync_error TEXT,
+      config TEXT,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL,
+      FOREIGN KEY (subscription_id) REFERENCES subscriptions(id)
+    )
+  `);
+
+  // Create domain_mappings table (Phase 3: Browser extension domain tracking)
+  db.run(`
+    CREATE TABLE IF NOT EXISTS domain_mappings (
+      id TEXT PRIMARY KEY,
+      domain TEXT NOT NULL UNIQUE,
+      subscription_id TEXT NOT NULL,
+      active INTEGER DEFAULT 1,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL,
+      FOREIGN KEY (subscription_id) REFERENCES subscriptions(id)
+    )
+  `);
+
   // Create indexes
   db.run(`CREATE INDEX IF NOT EXISTS idx_subscriptions_status ON subscriptions(status)`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_subscriptions_next_billing ON subscriptions(next_billing_date)`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_usage_events_subscription ON usage_events(subscription_id)`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_usage_events_timestamp ON usage_events(timestamp)`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_usage_stats_period ON usage_stats(subscription_id, period_start)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_integrations_service ON integrations(service_name)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_domain_mappings_domain ON domain_mappings(domain)`);
 
   console.log('Database initialized successfully');
 }

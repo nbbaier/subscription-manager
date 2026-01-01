@@ -3,6 +3,10 @@ import { initializeDatabase } from './lib/db/index.ts';
 import { SubscriptionService } from './lib/services/subscription.ts';
 import { UsageService } from './lib/services/usage.ts';
 import { AnalyticsService } from './lib/services/analytics.ts';
+import { IntegrationService, SUPPORTED_INTEGRATIONS, type IntegrationServiceName } from './lib/services/integration.ts';
+import { DomainMappingService } from './lib/services/domain-mapping.ts';
+import { SpotifyIntegration } from './lib/integrations/spotify.ts';
+import { GitHubIntegration } from './lib/integrations/github.ts';
 
 // Initialize database on startup
 initializeDatabase();
@@ -193,6 +197,286 @@ const server = Bun.serve({
         if (path === '/api/analytics/compute-stats' && req.method === 'POST') {
           AnalyticsService.computeAllStats();
           return new Response(JSON.stringify({ success: true, message: 'Stats computed' }), { headers });
+        }
+
+        // ==================== INTEGRATION ENDPOINTS ====================
+
+        // GET /api/integrations - List all integrations with status
+        if (path === '/api/integrations' && req.method === 'GET') {
+          const summary = IntegrationService.getIntegrationsSummary();
+          return new Response(JSON.stringify(summary), { headers });
+        }
+
+        // GET /api/integrations/:service - Get specific integration status
+        const getIntegrationMatch = path.match(/^\/api\/integrations\/([^\/]+)$/);
+        if (getIntegrationMatch && req.method === 'GET') {
+          const serviceName = getIntegrationMatch[1];
+          const integration = IntegrationService.getIntegration(serviceName);
+          const serviceInfo = SUPPORTED_INTEGRATIONS[serviceName as IntegrationServiceName];
+
+          if (!serviceInfo) {
+            return new Response(JSON.stringify({ error: 'Unknown integration' }), {
+              status: 404,
+              headers
+            });
+          }
+
+          return new Response(JSON.stringify({
+            service: serviceName,
+            name: serviceInfo.name,
+            description: serviceInfo.description,
+            icon: serviceInfo.icon,
+            status: integration?.sync_status || 'disconnected',
+            lastSync: integration?.last_sync_at || null,
+            subscriptionId: integration?.subscription_id || null,
+            error: integration?.sync_error || null,
+          }), { headers });
+        }
+
+        // GET /api/integrations/:service/auth-url - Get OAuth authorization URL
+        const authUrlMatch = path.match(/^\/api\/integrations\/([^\/]+)\/auth-url$/);
+        if (authUrlMatch && req.method === 'GET') {
+          const serviceName = authUrlMatch[1] as IntegrationServiceName;
+
+          if (!SUPPORTED_INTEGRATIONS[serviceName]) {
+            return new Response(JSON.stringify({ error: 'Unknown integration' }), {
+              status: 404,
+              headers
+            });
+          }
+
+          const redirectUri = url.searchParams.get('redirect_uri') ||
+            `http://localhost:${process.env.PORT || 3000}/api/integrations/${serviceName}/callback`;
+
+          try {
+            const authUrl = IntegrationService.generateAuthUrl(serviceName, redirectUri);
+            return new Response(JSON.stringify({ authUrl, redirectUri }), { headers });
+          } catch (error) {
+            return new Response(JSON.stringify({
+              error: 'Failed to generate auth URL',
+              message: error instanceof Error ? error.message : 'Unknown error'
+            }), { status: 500, headers });
+          }
+        }
+
+        // GET /api/integrations/:service/callback - OAuth callback handler
+        const callbackMatch = path.match(/^\/api\/integrations\/([^\/]+)\/callback$/);
+        if (callbackMatch && req.method === 'GET') {
+          const serviceName = callbackMatch[1] as IntegrationServiceName;
+          const code = url.searchParams.get('code');
+          const error = url.searchParams.get('error');
+
+          if (error) {
+            // Redirect to frontend with error
+            return new Response(null, {
+              status: 302,
+              headers: {
+                'Location': `/?integration=${serviceName}&error=${encodeURIComponent(error)}`,
+              },
+            });
+          }
+
+          if (!code) {
+            return new Response(JSON.stringify({ error: 'No authorization code provided' }), {
+              status: 400,
+              headers
+            });
+          }
+
+          const redirectUri = `http://localhost:${process.env.PORT || 3000}/api/integrations/${serviceName}/callback`;
+
+          try {
+            const tokens = await IntegrationService.exchangeCodeForTokens(serviceName, code, redirectUri);
+            IntegrationService.storeTokens(serviceName, tokens);
+
+            // Redirect to frontend with success
+            return new Response(null, {
+              status: 302,
+              headers: {
+                'Location': `/?integration=${serviceName}&connected=true`,
+              },
+            });
+          } catch (error) {
+            return new Response(null, {
+              status: 302,
+              headers: {
+                'Location': `/?integration=${serviceName}&error=${encodeURIComponent(
+                  error instanceof Error ? error.message : 'Connection failed'
+                )}`,
+              },
+            });
+          }
+        }
+
+        // POST /api/integrations/:service/disconnect - Disconnect integration
+        const disconnectMatch = path.match(/^\/api\/integrations\/([^\/]+)\/disconnect$/);
+        if (disconnectMatch && req.method === 'POST') {
+          const serviceName = disconnectMatch[1];
+          const success = IntegrationService.disconnect(serviceName);
+          return new Response(JSON.stringify({ success }), { headers });
+        }
+
+        // POST /api/integrations/:service/sync - Manually trigger sync
+        const syncMatch = path.match(/^\/api\/integrations\/([^\/]+)\/sync$/);
+        if (syncMatch && req.method === 'POST') {
+          const serviceName = syncMatch[1];
+
+          let result;
+          switch (serviceName) {
+            case 'spotify':
+              result = await SpotifyIntegration.syncUsage();
+              break;
+            case 'github':
+              result = await GitHubIntegration.syncUsage();
+              break;
+            default:
+              return new Response(JSON.stringify({ error: 'Unknown integration' }), {
+                status: 404,
+                headers
+              });
+          }
+
+          return new Response(JSON.stringify(result), { headers });
+        }
+
+        // POST /api/integrations/:service/link - Link integration to subscription
+        const linkMatch = path.match(/^\/api\/integrations\/([^\/]+)\/link$/);
+        if (linkMatch && req.method === 'POST') {
+          const serviceName = linkMatch[1];
+          const data = await req.json();
+
+          if (!data.subscriptionId) {
+            return new Response(JSON.stringify({ error: 'subscriptionId required' }), {
+              status: 400,
+              headers
+            });
+          }
+
+          IntegrationService.linkToSubscription(serviceName, data.subscriptionId);
+          return new Response(JSON.stringify({ success: true }), { headers });
+        }
+
+        // ==================== DOMAIN MAPPING ENDPOINTS ====================
+
+        // GET /api/domain-mappings - List all domain mappings
+        if (path === '/api/domain-mappings' && req.method === 'GET') {
+          const mappings = DomainMappingService.getAllMappings();
+          return new Response(JSON.stringify(mappings), { headers });
+        }
+
+        // GET /api/domain-mappings/config - Get extension config (domain -> subscription map)
+        if (path === '/api/domain-mappings/config' && req.method === 'GET') {
+          const config = DomainMappingService.getExtensionConfig();
+          return new Response(JSON.stringify(config), { headers });
+        }
+
+        // GET /api/domain-mappings/suggestions/:subscriptionId - Get domain suggestions
+        const suggestionsMatch = path.match(/^\/api\/domain-mappings\/suggestions\/([^\/]+)$/);
+        if (suggestionsMatch && req.method === 'GET') {
+          const subscription = SubscriptionService.getSubscriptionById(suggestionsMatch[1]);
+          if (!subscription) {
+            return new Response(JSON.stringify({ error: 'Subscription not found' }), {
+              status: 404,
+              headers
+            });
+          }
+          const suggestions = DomainMappingService.getSuggestedDomains(subscription.name);
+          return new Response(JSON.stringify({ suggestions }), { headers });
+        }
+
+        // POST /api/domain-mappings - Create a new domain mapping
+        if (path === '/api/domain-mappings' && req.method === 'POST') {
+          const data = await req.json();
+
+          if (!data.domain || !data.subscriptionId) {
+            return new Response(JSON.stringify({ error: 'domain and subscriptionId required' }), {
+              status: 400,
+              headers
+            });
+          }
+
+          try {
+            const mapping = DomainMappingService.createMapping(data.domain, data.subscriptionId);
+            return new Response(JSON.stringify(mapping), { status: 201, headers });
+          } catch (error) {
+            return new Response(JSON.stringify({
+              error: error instanceof Error ? error.message : 'Failed to create mapping'
+            }), { status: 400, headers });
+          }
+        }
+
+        // DELETE /api/domain-mappings/:domain - Delete a domain mapping
+        const deleteMappingMatch = path.match(/^\/api\/domain-mappings\/(.+)$/);
+        if (deleteMappingMatch && req.method === 'DELETE') {
+          const domain = decodeURIComponent(deleteMappingMatch[1]);
+          const success = DomainMappingService.deleteMapping(domain);
+
+          if (!success) {
+            return new Response(JSON.stringify({ error: 'Domain mapping not found' }), {
+              status: 404,
+              headers
+            });
+          }
+
+          return new Response(JSON.stringify({ success: true }), { headers });
+        }
+
+        // POST /api/domain-mappings/bulk - Bulk create mappings
+        if (path === '/api/domain-mappings/bulk' && req.method === 'POST') {
+          const data = await req.json();
+
+          if (!data.subscriptionId || !Array.isArray(data.domains)) {
+            return new Response(JSON.stringify({ error: 'subscriptionId and domains array required' }), {
+              status: 400,
+              headers
+            });
+          }
+
+          const created = DomainMappingService.bulkCreateMappings(data.subscriptionId, data.domains);
+          return new Response(JSON.stringify({ created: created.length, mappings: created }), { headers });
+        }
+
+        // POST /api/usage/batch - Batch log usage (for browser extension)
+        if (path === '/api/usage/batch' && req.method === 'POST') {
+          const data = await req.json();
+
+          if (!Array.isArray(data.events)) {
+            return new Response(JSON.stringify({ error: 'events array required' }), {
+              status: 400,
+              headers
+            });
+          }
+
+          const results = [];
+          for (const event of data.events) {
+            if (!event.subscriptionId) {
+              // Try to resolve from domain
+              if (event.domain) {
+                const mapping = DomainMappingService.getMappingByDomain(event.domain);
+                if (mapping) {
+                  event.subscriptionId = mapping.subscription_id;
+                }
+              }
+            }
+
+            if (event.subscriptionId) {
+              const usage = UsageService.logUsage({
+                subscriptionId: event.subscriptionId,
+                source: event.source || 'browser',
+                usageType: event.usageType || 'session',
+                quantity: event.quantity || event.minutes / 60 || 1,
+                unit: event.unit || 'hours',
+                timestamp: event.timestamp,
+                notes: event.notes,
+                metadata: event.metadata ? JSON.stringify(event.metadata) : undefined,
+              });
+              results.push({ success: true, id: usage.id });
+            } else {
+              results.push({ success: false, error: 'Could not resolve subscription' });
+            }
+          }
+
+          return new Response(JSON.stringify({ processed: results.length, results }), { headers });
         }
 
         return new Response(JSON.stringify({ error: 'Not found' }), {
