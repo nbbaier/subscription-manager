@@ -137,7 +137,7 @@ function calculateCancellationScore(subscriptionId: string): {
 	}
 
 	// Cost impact component (higher cost = more impactful to cancel)
-	let costComponent = Math.min(100, costImpact * 5); // 20% of spending = 100
+	const costComponent = Math.min(100, costImpact * 5); // 20% of spending = 100
 	if (monthlyCost >= 5000) {
 		// $50+/month
 		reasons.push(`High monthly cost ($${(monthlyCost / 100).toFixed(2)})`);
@@ -188,8 +188,8 @@ function getRecommendations(): Recommendation[] {
 		if (!result) continue;
 
 		// Calculate savings
-		let monthlySavings = result.metrics.monthlyCost;
-		let yearlySavings = monthlySavings * 12;
+		const monthlySavings = result.metrics.monthlyCost;
+		const yearlySavings = monthlySavings * 12;
 
 		// Determine action and priority
 		let action: Recommendation["action"];
@@ -381,7 +381,7 @@ function getOverlappingSubscriptions(): {
 			byCategory.set(category, []);
 		}
 
-		byCategory.get(category)!.push({
+		byCategory.get(category)?.push({
 			id: sub.id,
 			name: sub.name,
 			monthlyCost,
@@ -399,12 +399,14 @@ function getOverlappingSubscriptions(): {
 				s.valueScore < min.valueScore ? s : min,
 			);
 
-			overlaps.push({
-				category,
-				subscriptions: subs.sort((a, b) => b.valueScore - a.valueScore),
-				combinedMonthlyCost: combinedCost,
-				suggestion: `Consider keeping ${subs[0].name} (highest value) and cancelling ${lowestValue.name}`,
-			});
+			if (subs[0] && lowestValue) {
+				overlaps.push({
+					category,
+					subscriptions: subs.sort((a, b) => b.valueScore - a.valueScore),
+					combinedMonthlyCost: combinedCost,
+					suggestion: `Consider keeping ${subs[0].name} (highest value) and cancelling ${lowestValue.name}`,
+				});
+			}
 		}
 	}
 

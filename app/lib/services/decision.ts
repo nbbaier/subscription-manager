@@ -342,8 +342,7 @@ function getCancellationChecklist(
 
 	steps.push({
 		step: "Review usage",
-		description:
-			"Check your recent usage to confirm you want to cancel",
+		description: "Check your recent usage to confirm you want to cancel",
 		required: false,
 	});
 
@@ -447,9 +446,7 @@ function getSavingsSummary(): SavingsSummary {
 	const cancelledSubscriptions = cancellations.map((c) => {
 		const monthsSinceCancellation =
 			(now - c.decision_date) / (30 * 24 * 60 * 60 * 1000);
-		const totalSaved = Math.floor(
-			c.cost_at_decision * monthsSinceCancellation,
-		);
+		const totalSaved = Math.floor(c.cost_at_decision * monthsSinceCancellation);
 
 		totalMonthlySavings += c.cost_at_decision;
 		totalSavedSinceTracking += totalSaved;

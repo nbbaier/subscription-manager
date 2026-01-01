@@ -676,7 +676,10 @@ const server = Bun.serve({
 				}
 
 				// GET /api/recommendations/quick-wins - Get quick wins
-				if (path === "/api/recommendations/quick-wins" && req.method === "GET") {
+				if (
+					path === "/api/recommendations/quick-wins" &&
+					req.method === "GET"
+				) {
 					const quickWins = RecommendationService.getQuickWins();
 					return new Response(JSON.stringify(quickWins), { headers });
 				}
@@ -721,7 +724,9 @@ const server = Bun.serve({
 						return new Response(
 							JSON.stringify({
 								error:
-									error instanceof Error ? error.message : "Failed to log decision",
+									error instanceof Error
+										? error.message
+										: "Failed to log decision",
 							}),
 							{ status: 400, headers },
 						);
@@ -763,10 +768,10 @@ const server = Bun.serve({
 					const data = await req.json();
 
 					if (!data.outcome) {
-						return new Response(
-							JSON.stringify({ error: "outcome required" }),
-							{ status: 400, headers },
-						);
+						return new Response(JSON.stringify({ error: "outcome required" }), {
+							status: 400,
+							headers,
+						});
 					}
 
 					try {
@@ -844,9 +849,8 @@ const server = Bun.serve({
 
 				// GET /api/roi/annual-summary - Get annual summary
 				if (path === "/api/roi/annual-summary" && req.method === "GET") {
-					const year = url.searchParams.get("year")
-						? parseInt(url.searchParams.get("year")!, 10)
-						: undefined;
+					const searchYear = url.searchParams.get("year") ?? undefined;
+					const year = searchYear ? parseInt(searchYear, 10) : undefined;
 					const summary = ROIService.generateAnnualSummary(year);
 					return new Response(JSON.stringify(summary), { headers });
 				}

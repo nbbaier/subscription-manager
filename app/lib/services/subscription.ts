@@ -93,7 +93,7 @@ function createSubscription(data: NewSubscription): Subscription {
 
 function updateSubscription(
 	id: string,
-	data: Partial<NewSubscription>,
+	data: Partial<Subscription>,
 ): Subscription | null {
 	const existing = getSubscriptionById(id);
 	if (!existing) return null;
@@ -107,7 +107,7 @@ function updateSubscription(
 	const query = db.prepare(`
       UPDATE subscriptions
       SET name = ?, description = ?, cost_cents = ?, billing_frequency = ?,
-          category = ?, updated_at = ?
+          category = ?, status = ?, updated_at = ?
       WHERE id = ?
     `);
 
@@ -117,6 +117,7 @@ function updateSubscription(
 		updated.costCents,
 		updated.billingFrequency,
 		updated.category || null,
+		updated.status || "active",
 		updated.updatedAt,
 		id,
 	);

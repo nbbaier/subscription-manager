@@ -165,6 +165,8 @@ function getIndustryComparisons(): IndustryComparison[] {
 		const category = subTyped.category || "other";
 		const industry = INDUSTRY_AVERAGES[category] || INDUSTRY_AVERAGES.other;
 
+		if (!industry) continue;
+
 		let monthlyCost = subTyped.cost_cents;
 		if (subTyped.billing_frequency === "yearly") {
 			monthlyCost = subTyped.cost_cents / 12;
@@ -211,7 +213,9 @@ function getIndustryComparisons(): IndustryComparison[] {
 		});
 	}
 
-	return comparisons.sort((a, b) => b.percentageVsAverage - a.percentageVsAverage);
+	return comparisons.sort(
+		(a, b) => b.percentageVsAverage - a.percentageVsAverage,
+	);
 }
 
 /**
@@ -290,7 +294,9 @@ function calculateWhatIf(subscriptionIds: string[]): WhatIfScenario {
 	let monthlySavings = 0;
 
 	for (const id of subscriptionIds) {
-		const sub = db.query("SELECT * FROM subscriptions WHERE id = ?").get(id) as {
+		const sub = db
+			.query("SELECT * FROM subscriptions WHERE id = ?")
+			.get(id) as {
 			id: string;
 			name: string;
 			cost_cents: number;
@@ -344,9 +350,21 @@ function generateAnnualSummary(year?: number): AnnualSummary {
 	// Get all subscriptions that were active during the year
 	const subscriptions = SubscriptionService.getAllSubscriptions();
 
+	// Get cancellation dates for accurate historical tracking
+	const cancellationDates = new Map<string, number>();
+	const allCancellations = db
+		.query(
+			"SELECT subscription_id, decision_date FROM decision_log WHERE decision = 'cancel'",
+		)
+		.all() as { subscription_id: string; decision_date: number }[];
+	for (const c of allCancellations) {
+		cancellationDates.set(c.subscription_id, c.decision_date);
+	}
+
 	// Calculate monthly spending for each month
 	const monthlySpending: { month: string; amount: number }[] = [];
 	let totalSpent = 0;
+	const categoryTotals = new Map<string, number>();
 
 	for (let month = 0; month < 12; month++) {
 		const monthStart = new Date(targetYear, month, 1).getTime();
@@ -359,10 +377,15 @@ function generateAnnualSummary(year?: number): AnnualSummary {
 				created_at: number;
 				cost_cents: number;
 				billing_frequency: string;
+				category: string | null;
 			};
 
 			// Check if subscription was active during this month
 			if (subTyped.created_at > monthEnd) continue;
+
+			// Check if it was cancelled before this month
+			const cancelledAt = cancellationDates.get(sub.id);
+			if (cancelledAt && cancelledAt < monthStart) continue;
 
 			let monthlyCost = subTyped.cost_cents;
 			if (subTyped.billing_frequency === "yearly") {
@@ -372,6 +395,12 @@ function generateAnnualSummary(year?: number): AnnualSummary {
 			}
 
 			monthTotal += monthlyCost;
+
+			const category = subTyped.category || "other";
+			categoryTotals.set(
+				category,
+				(categoryTotals.get(category) || 0) + monthlyCost,
+			);
 		}
 
 		const monthName = new Date(targetYear, month, 1).toLocaleDateString(
@@ -383,9 +412,7 @@ function generateAnnualSummary(year?: number): AnnualSummary {
 	}
 
 	// Find highest and lowest months
-	const sortedMonths = [...monthlySpending].sort(
-		(a, b) => b.amount - a.amount,
-	);
+	const sortedMonths = [...monthlySpending].sort((a, b) => b.amount - a.amount);
 	const highestMonth = sortedMonths[0] || { month: "N/A", amount: 0 };
 	const lowestMonth = sortedMonths[sortedMonths.length - 1] || {
 		month: "N/A",
@@ -393,13 +420,13 @@ function generateAnnualSummary(year?: number): AnnualSummary {
 	};
 
 	// Get category breakdown
-	const categoryBreakdown = AnalyticsService.getSpendingByCategory().map(
-		(cat) => ({
-			category: cat.category,
-			total: cat.yearlyTotal,
-			percentage: totalSpent > 0 ? Math.round((cat.yearlyTotal / totalSpent) * 100) : 0,
-		}),
-	);
+	const categoryBreakdown = Array.from(categoryTotals.entries())
+		.map(([category, total]) => ({
+			category,
+			total,
+			percentage: totalSpent > 0 ? Math.round((total / totalSpent) * 100) : 0,
+		}))
+		.sort((a, b) => b.total - a.total);
 
 	// Get subscription changes during the year
 	const added: AnnualSummary["subscriptionChanges"]["added"] = [];
@@ -490,13 +517,16 @@ function generateAnnualSummary(year?: number): AnnualSummary {
 		`Your average monthly subscription spending was $${(avgMonthly / 100).toFixed(2)}.`,
 	);
 
-	if (worstValue.length > 0 && worstValue[0].valueScore < 30) {
-		insights.push(
-			`${worstValue[0].name} has the lowest value score. Consider reviewing it.`,
-		);
+	if (worstValue.length > 0 && worstValue[0]) {
+		const worst = worstValue[0];
+		if (worst.valueScore < 30) {
+			insights.push(
+				`${worst.name} has the lowest value score. Consider reviewing it.`,
+			);
+		}
 	}
 
-	if (categoryBreakdown.length > 0) {
+	if (categoryBreakdown.length > 0 && categoryBreakdown[0]) {
 		const topCategory = categoryBreakdown[0];
 		insights.push(
 			`${topCategory.category} is your largest spending category (${topCategory.percentage}% of total).`,
