@@ -9,12 +9,15 @@ import {
 	type SpotifySyncResult,
 } from "./lib/integrations/spotify.ts";
 import { AnalyticsService } from "./lib/services/analytics.ts";
+import { DecisionService } from "./lib/services/decision.ts";
 import { DomainMappingService } from "./lib/services/domain-mapping.ts";
 import {
 	IntegrationService,
 	type IntegrationServiceName,
 	SUPPORTED_INTEGRATIONS,
 } from "./lib/services/integration.ts";
+import { RecommendationService } from "./lib/services/recommendation.ts";
+import { ROIService } from "./lib/services/roi.ts";
 import { SubscriptionService } from "./lib/services/subscription.ts";
 import { UsageService } from "./lib/services/usage.ts";
 
@@ -656,6 +659,196 @@ const server = Bun.serve({
 						JSON.stringify({ processed: results.length, results }),
 						{ headers },
 					);
+				}
+
+				// ==================== RECOMMENDATION ENDPOINTS (Phase 4) ====================
+
+				// GET /api/recommendations - Get all recommendations
+				if (path === "/api/recommendations" && req.method === "GET") {
+					const recommendations = RecommendationService.getRecommendations();
+					return new Response(JSON.stringify(recommendations), { headers });
+				}
+
+				// GET /api/recommendations/summary - Get recommendation summary with potential savings
+				if (path === "/api/recommendations/summary" && req.method === "GET") {
+					const summary = RecommendationService.getRecommendationSummary();
+					return new Response(JSON.stringify(summary), { headers });
+				}
+
+				// GET /api/recommendations/quick-wins - Get quick wins
+				if (path === "/api/recommendations/quick-wins" && req.method === "GET") {
+					const quickWins = RecommendationService.getQuickWins();
+					return new Response(JSON.stringify(quickWins), { headers });
+				}
+
+				// GET /api/recommendations/overlaps - Get overlapping subscriptions
+				if (path === "/api/recommendations/overlaps" && req.method === "GET") {
+					const overlaps = RecommendationService.getOverlappingSubscriptions();
+					return new Response(JSON.stringify(overlaps), { headers });
+				}
+
+				// ==================== DECISION ENDPOINTS (Phase 4) ====================
+
+				// GET /api/decisions - Get all decisions
+				if (path === "/api/decisions" && req.method === "GET") {
+					const decisions = DecisionService.getAllDecisions();
+					return new Response(JSON.stringify(decisions), { headers });
+				}
+
+				// POST /api/decisions - Log a new decision
+				if (path === "/api/decisions" && req.method === "POST") {
+					const data = await req.json();
+
+					if (!data.subscriptionId || !data.decision) {
+						return new Response(
+							JSON.stringify({ error: "subscriptionId and decision required" }),
+							{ status: 400, headers },
+						);
+					}
+
+					try {
+						const decision = DecisionService.logDecision({
+							subscriptionId: data.subscriptionId,
+							decision: data.decision,
+							reasoning: data.reasoning,
+							reviewDays: data.reviewDays,
+						});
+						return new Response(JSON.stringify(decision), {
+							status: 201,
+							headers,
+						});
+					} catch (error) {
+						return new Response(
+							JSON.stringify({
+								error:
+									error instanceof Error ? error.message : "Failed to log decision",
+							}),
+							{ status: 400, headers },
+						);
+					}
+				}
+
+				// GET /api/decisions/pending-reviews - Get pending reviews
+				if (path === "/api/decisions/pending-reviews" && req.method === "GET") {
+					const pendingReviews = DecisionService.getPendingReviews();
+					return new Response(JSON.stringify(pendingReviews), { headers });
+				}
+
+				// GET /api/decisions/savings - Get savings summary
+				if (path === "/api/decisions/savings" && req.method === "GET") {
+					const savings = DecisionService.getSavingsSummary();
+					return new Response(JSON.stringify(savings), { headers });
+				}
+
+				// GET /api/decisions/:subscriptionId - Get decisions for a subscription
+				const getDecisionsMatch = path.match(/^\/api\/decisions\/([^/]+)$/);
+				if (
+					getDecisionsMatch &&
+					req.method === "GET" &&
+					!["pending-reviews", "savings"].includes(getDecisionsMatch[1] || "")
+				) {
+					const subscriptionId = getDecisionsMatch[1];
+					const decisions = subscriptionId
+						? DecisionService.getDecisionHistory(subscriptionId)
+						: [];
+					return new Response(JSON.stringify(decisions), { headers });
+				}
+
+				// PUT /api/decisions/:id/outcome - Update decision outcome
+				const updateOutcomeMatch = path.match(
+					/^\/api\/decisions\/([^/]+)\/outcome$/,
+				);
+				if (updateOutcomeMatch && req.method === "PUT") {
+					const decisionId = updateOutcomeMatch[1];
+					const data = await req.json();
+
+					if (!data.outcome) {
+						return new Response(
+							JSON.stringify({ error: "outcome required" }),
+							{ status: 400, headers },
+						);
+					}
+
+					try {
+						const decision = decisionId
+							? DecisionService.updateDecisionOutcome(decisionId, data.outcome)
+							: null;
+						return new Response(JSON.stringify(decision), { headers });
+					} catch (error) {
+						return new Response(
+							JSON.stringify({
+								error:
+									error instanceof Error
+										? error.message
+										: "Failed to update decision",
+							}),
+							{ status: 400, headers },
+						);
+					}
+				}
+
+				// GET /api/subscriptions/:id/cancellation-checklist - Get cancellation checklist
+				const checklistMatch = path.match(
+					/^\/api\/subscriptions\/([^/]+)\/cancellation-checklist$/,
+				);
+				if (checklistMatch && req.method === "GET") {
+					const subscriptionId = checklistMatch[1];
+					const checklist = subscriptionId
+						? DecisionService.getCancellationChecklist(subscriptionId)
+						: null;
+
+					if (!checklist) {
+						return new Response(
+							JSON.stringify({ error: "Subscription not found" }),
+							{ status: 404, headers },
+						);
+					}
+
+					return new Response(JSON.stringify(checklist), { headers });
+				}
+
+				// ==================== ROI ENDPOINTS (Phase 4) ====================
+
+				// GET /api/roi/stats - Get quick ROI stats
+				if (path === "/api/roi/stats" && req.method === "GET") {
+					const stats = ROIService.getQuickStats();
+					return new Response(JSON.stringify(stats), { headers });
+				}
+
+				// GET /api/roi/industry-comparison - Get industry comparisons
+				if (path === "/api/roi/industry-comparison" && req.method === "GET") {
+					const comparisons = ROIService.getIndustryComparisons();
+					return new Response(JSON.stringify(comparisons), { headers });
+				}
+
+				// GET /api/roi/value-rankings - Get value per dollar rankings
+				if (path === "/api/roi/value-rankings" && req.method === "GET") {
+					const rankings = ROIService.getValuePerDollarRankings();
+					return new Response(JSON.stringify(rankings), { headers });
+				}
+
+				// POST /api/roi/what-if - Calculate what-if scenario
+				if (path === "/api/roi/what-if" && req.method === "POST") {
+					const data = await req.json();
+
+					if (!Array.isArray(data.subscriptionIds)) {
+						return new Response(
+							JSON.stringify({ error: "subscriptionIds array required" }),
+							{ status: 400, headers },
+						);
+					}
+
+					const scenario = ROIService.calculateWhatIf(data.subscriptionIds);
+					return new Response(JSON.stringify(scenario), { headers });
+				}
+
+				// GET /api/roi/annual-summary - Get annual summary
+				if (path === "/api/roi/annual-summary" && req.method === "GET") {
+					const year = url.searchParams.get("year")
+						? parseInt(url.searchParams.get("year")!, 10)
+						: undefined;
+					const summary = ROIService.generateAnnualSummary(year);
+					return new Response(JSON.stringify(summary), { headers });
 				}
 
 				return new Response(JSON.stringify({ error: "Not found" }), {
