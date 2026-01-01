@@ -380,7 +380,8 @@ const server = Bun.serve({
 						);
 					}
 
-					const redirectUri = `http://localhost:${process.env.PORT || 3000}/api/integrations/${serviceName}/callback`;
+					const url = new URL(req.url);
+					const redirectUri = `${url.origin}/api/integrations/${serviceName}/callback`;
 
 					try {
 						const tokens = await IntegrationService.exchangeCodeForTokens(
