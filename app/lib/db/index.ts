@@ -99,6 +99,26 @@ export function initializeDatabase() {
     )
   `);
 
+	// Create decision_log table (Phase 4: Track subscription decisions and outcomes)
+	db.run(`
+    CREATE TABLE IF NOT EXISTS decision_log (
+      id TEXT PRIMARY KEY,
+      subscription_id TEXT NOT NULL,
+      decision_date INTEGER NOT NULL,
+      decision TEXT NOT NULL,
+      reasoning TEXT,
+      cost_at_decision INTEGER,
+      usage_at_decision REAL,
+      value_score_at_decision REAL,
+      review_date INTEGER,
+      outcome TEXT,
+      savings_since INTEGER DEFAULT 0,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL,
+      FOREIGN KEY (subscription_id) REFERENCES subscriptions(id)
+    )
+  `);
+
 	// Create indexes
 	db.run(
 		`CREATE INDEX IF NOT EXISTS idx_subscriptions_status ON subscriptions(status)`,
@@ -120,6 +140,12 @@ export function initializeDatabase() {
 	);
 	db.run(
 		`CREATE INDEX IF NOT EXISTS idx_domain_mappings_domain ON domain_mappings(domain)`,
+	);
+	db.run(
+		`CREATE INDEX IF NOT EXISTS idx_decision_log_subscription ON decision_log(subscription_id)`,
+	);
+	db.run(
+		`CREATE INDEX IF NOT EXISTS idx_decision_log_review_date ON decision_log(review_date)`,
 	);
 
 	console.log("Database initialized successfully");
