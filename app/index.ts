@@ -376,7 +376,6 @@ const server = Bun.serve({
 						);
 					}
 
-					const url = new URL(req.url);
 					const redirectUri = `${url.origin}/api/integrations/${serviceName}/callback`;
 
 					try {
