@@ -267,7 +267,7 @@ async function syncUsage(): Promise<GitHubSyncResult> {
 			totalPRs += activity.prs;
 
 			// Create timestamp for the date (end of day)
-			const timestamp = new Date(`${date}T23:59:59Z`).getTime();
+			const timestamp = new Date(dateEvents[0]?.created_at || date).getTime();
 
 			// Get repositories worked on
 			const repos = [
