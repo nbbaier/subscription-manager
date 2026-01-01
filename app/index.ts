@@ -634,7 +634,8 @@ const server = Bun.serve({
 								subscriptionId: event.subscriptionId,
 								source: event.source || "browser",
 								usageType: event.usageType || "session",
-								quantity: event.quantity || event.minutes / 60 || 1,
+								quantity:
+									event.quantity || (event.minutes ? event.minutes / 60 : 1),
 								unit: event.unit || "hours",
 								timestamp: event.timestamp,
 								notes: event.notes,

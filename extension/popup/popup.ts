@@ -157,5 +157,54 @@ refreshBtn?.addEventListener("click", async () => {
 // Initial load
 refreshStatus();
 
+// Handle settings toggle
+const toggleSettings = document.getElementById("toggleSettings");
+const settingsSection = document.getElementById("settingsSection");
+const apiUrlInput = document.getElementById("apiUrlInput") as HTMLInputElement;
+const saveSettingsBtn = document.getElementById("saveSettingsBtn");
+const dashboardLink = document.getElementById(
+	"dashboardLink",
+) as HTMLAnchorElement;
+
+async function updateDashboardLink() {
+	const data = await chrome.storage.local.get("apiBaseUrl");
+	const baseUrl =
+		typeof data.apiBaseUrl === "string"
+			? data.apiBaseUrl
+			: "http://localhost:3000";
+	if (dashboardLink) {
+		dashboardLink.href = baseUrl;
+	}
+	if (apiUrlInput) {
+		apiUrlInput.value = baseUrl;
+	}
+}
+
+updateDashboardLink();
+
+toggleSettings?.addEventListener("click", (e) => {
+	e.preventDefault();
+	if (settingsSection) {
+		settingsSection.style.display =
+			settingsSection.style.display === "none" ? "block" : "none";
+	}
+});
+
+saveSettingsBtn?.addEventListener("click", async () => {
+	const newUrl = apiUrlInput?.value.trim();
+	if (newUrl) {
+		await chrome.storage.local.set({ apiBaseUrl: newUrl });
+		saveSettingsBtn.textContent = "Saved!";
+		updateDashboardLink();
+
+		// Notify background script to reload config
+		chrome.runtime.sendMessage({ type: "CONFIG_UPDATED" });
+
+		setTimeout(() => {
+			saveSettingsBtn.textContent = "Save API URL";
+		}, 2000);
+	}
+});
+
 // Refresh every 5 seconds while popup is open
 setInterval(refreshStatus, 5000);

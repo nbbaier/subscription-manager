@@ -240,8 +240,17 @@
     </button>
   </div>
 
-  <div class="footer">
-    <a href="http://localhost:3000" target="_blank">Open Dashboard</a>
+  <div class="section" id="settingsSection" style="display: none; border-top: 1px solid #e5e7eb; margin-top: 8px;">
+    <div class="section-title">Settings</div>
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <input type="text" id="apiUrlInput" placeholder="http://localhost:3000" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 12px;">
+      <button class="button button-secondary" id="saveSettingsBtn" style="padding: 6px; font-size: 12px;">Save API URL</button>
+    </div>
+  </div>
+
+  <div class="footer" style="display: flex; justify-content: space-between; align-items: center;">
+    <a href="#" id="dashboardLink" target="_blank">Open Dashboard</a>
+    <a href="#" id="toggleSettings" style="font-size: 16px; color: #6b7280;">⚙️</a>
   </div>
 
   <script src="popup.js"></script>

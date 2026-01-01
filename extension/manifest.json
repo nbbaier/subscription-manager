@@ -4,7 +4,7 @@
 	"version": "1.0.0",
 	"description": "Automatically track time spent on subscription services",
 	"permissions": ["tabs", "storage", "alarms"],
-	"host_permissions": ["http://localhost:3000/*"],
+	"host_permissions": ["http://localhost:3000/*", "http://*/*", "https://*/*"],
 	"background": {
 		"service_worker": "background.js",
 		"type": "module"

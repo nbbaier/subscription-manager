@@ -1,7 +1,7 @@
 // Background Service Worker for Subscription Tracker Extension
 // Handles event aggregation, batching, and sync with main app
 
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3000";
+let API_BASE = "http://localhost:3000";
 const SYNC_INTERVAL_MINUTES = 5;
 const MIN_TRACKING_SECONDS = 30; // Minimum time to track (avoid quick visits)
 
@@ -28,9 +28,18 @@ const activeSessions: Map<number, TrackingSession> = new Map();
 let pendingEvents: PendingEvent[] = [];
 let isOnline = true;
 
+// Load configuration
+async function loadConfig(): Promise<void> {
+	const data = await chrome.storage.local.get("apiBaseUrl");
+	if (typeof data.apiBaseUrl === "string") {
+		API_BASE = data.apiBaseUrl;
+	}
+}
+
 // Initialize
 chrome.runtime.onInstalled.addListener(async () => {
 	console.log("Subscription Tracker extension installed");
+	await loadConfig();
 	await fetchDomainMappings();
 
 	// Set up periodic sync
@@ -294,6 +303,14 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 		return true;
 	}
 
+	if (message.type === "CONFIG_UPDATED") {
+		loadConfig().then(() => {
+			fetchDomainMappings();
+			sendResponse({ success: true });
+		});
+		return true;
+	}
+
 	if (message.type === "QUICK_LOG") {
 		// Quick log from popup
 		const event: PendingEvent = {
@@ -313,4 +330,6 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
 // Initialize on startup
 loadPendingEvents();
-fetchDomainMappings();
+loadConfig().then(() => {
+	fetchDomainMappings();
+});
