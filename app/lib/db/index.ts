@@ -51,11 +51,27 @@ export function initializeDatabase() {
     )
   `);
 
+  // Create usage_stats table (for aggregated statistics)
+  db.run(`
+    CREATE TABLE IF NOT EXISTS usage_stats (
+      id TEXT PRIMARY KEY,
+      subscription_id TEXT NOT NULL,
+      period_type TEXT NOT NULL,
+      period_start INTEGER NOT NULL,
+      total_events INTEGER DEFAULT 0,
+      total_quantity REAL DEFAULT 0,
+      cost_per_use REAL,
+      value_score REAL,
+      FOREIGN KEY (subscription_id) REFERENCES subscriptions(id)
+    )
+  `);
+
   // Create indexes
   db.run(`CREATE INDEX IF NOT EXISTS idx_subscriptions_status ON subscriptions(status)`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_subscriptions_next_billing ON subscriptions(next_billing_date)`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_usage_events_subscription ON usage_events(subscription_id)`);
   db.run(`CREATE INDEX IF NOT EXISTS idx_usage_events_timestamp ON usage_events(timestamp)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_usage_stats_period ON usage_stats(subscription_id, period_start)`);
 
   console.log('Database initialized successfully');
 }
