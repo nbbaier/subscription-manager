@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subscription Manager</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f7fa;
+            color: #2d3748;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 0;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        header h1 {
+            font-size: 2em;
+            font-weight: 600;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-card h3 {
+            font-size: 0.875em;
+            color: #718096;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
+        }
+
+        .stat-card .value {
+            font-size: 2em;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .card h2 {
+            margin-bottom: 20px;
+            color: #2d3748;
+        }
+
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95em;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            background: #5568d3;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background: #48bb78;
+        }
+
+        .btn-secondary:hover {
+            background: #38a169;
+        }
+
+        .btn-danger {
+            background: #f56565;
+        }
+
+        .btn-danger:hover {
+            background: #e53e3e;
+        }
+
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 0.875em;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        th {
+            background: #f7fafc;
+            font-weight: 600;
+            color: #4a5568;
+            font-size: 0.875em;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        tr:hover {
+            background: #f7fafc;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #4a5568;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 0.95em;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-active {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .badge-trial {
+            background: #feebc8;
+            color: #7c2d12;
+        }
+
+        .usage-btn {
+            background: #48bb78;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.875em;
+            margin-right: 8px;
+        }
+
+        .usage-btn:hover {
+            background: #38a169;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #718096;
+        }
+
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>💳 Subscription Manager</h1>
+            <p>Track subscriptions, measure usage, make data-driven decisions</p>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Stats Dashboard -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Monthly Spend</h3>
+                <div class="value" id="monthly-total">$0.00</div>
+            </div>
+            <div class="stat-card">
+                <h3>Yearly Cost</h3>
+                <div class="value" id="yearly-total">$0.00</div>
+            </div>
+            <div class="stat-card">
+                <h3>Active Subscriptions</h3>
+                <div class="value" id="active-count">0</div>
+            </div>
+        </div>
+
+        <!-- Subscriptions List -->
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2>Your Subscriptions</h2>
+                <button class="btn" onclick="openAddModal()">+ Add Subscription</button>
+            </div>
+
+            <div id="subscriptions-container">
+                <div class="empty-state">
+                    <p>Loading subscriptions...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Subscription Modal -->
+    <div id="subscription-modal" class="modal">
+        <div class="modal-content">
+            <h2 id="modal-title">Add Subscription</h2>
+            <form id="subscription-form" onsubmit="saveSubscription(event)">
+                <input type="hidden" id="subscription-id">
+
+                <div class="form-group">
+                    <label for="name">Name *</label>
+                    <input type="text" id="name" required placeholder="e.g., Netflix, Spotify">
+                </div>
+
+                <div class="form-group">
+                    <label for="description">Description</label>
+                    <textarea id="description" rows="2" placeholder="Optional notes about this subscription"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="cost">Cost *</label>
+                    <input type="number" id="cost" step="0.01" required placeholder="0.00">
+                </div>
+
+                <div class="form-group">
+                    <label for="billing-frequency">Billing Frequency *</label>
+                    <select id="billing-frequency" required>
+                        <option value="monthly">Monthly</option>
+                        <option value="yearly">Yearly</option>
+                        <option value="weekly">Weekly</option>
+                        <option value="one-time">One-time</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="category">Category</label>
+                    <select id="category">
+                        <option value="">Select category</option>
+                        <option value="streaming">Streaming</option>
+                        <option value="productivity">Productivity</option>
+                        <option value="gaming">Gaming</option>
+                        <option value="news">News</option>
+                        <option value="fitness">Fitness</option>
+                        <option value="education">Education</option>
+                        <option value="music">Music</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3000/api';
+
+        // Load initial data
+        async function loadData() {
+            await Promise.all([
+                loadStats(),
+                loadSubscriptions()
+            ]);
+        }
+
+        async function loadStats() {
+            try {
+                const response = await fetch(`${API_BASE}/subscriptions/stats`);
+                const stats = await response.json();
+
+                document.getElementById('monthly-total').textContent =
+                    `$${(stats.monthlyTotal / 100).toFixed(2)}`;
+                document.getElementById('yearly-total').textContent =
+                    `$${(stats.yearlyTotal / 100).toFixed(2)}`;
+                document.getElementById('active-count').textContent = stats.activeCount;
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        async function loadSubscriptions() {
+            try {
+                const response = await fetch(`${API_BASE}/subscriptions`);
+                const subscriptions = await response.json();
+
+                const container = document.getElementById('subscriptions-container');
+
+                if (subscriptions.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <p>No subscriptions yet. Add your first one!</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Category</th>
+                                <th>Cost</th>
+                                <th>Frequency</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${subscriptions.map(sub => `
+                                <tr>
+                                    <td><strong>${sub.name}</strong>${sub.description ? `<br><small style="color: #718096;">${sub.description}</small>` : ''}</td>
+                                    <td>${sub.category || '-'}</td>
+                                    <td>$${(sub.costCents / 100).toFixed(2)}</td>
+                                    <td>${sub.billingFrequency}</td>
+                                    <td><span class="badge badge-${sub.status}">${sub.status}</span></td>
+                                    <td>
+                                        <button class="usage-btn" onclick="logUsage('${sub.id}')">✓ Log Usage</button>
+                                        <button class="btn btn-small" onclick="editSubscription('${sub.id}')">Edit</button>
+                                        <button class="btn btn-danger btn-small" onclick="deleteSubscription('${sub.id}')">Delete</button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } catch (error) {
+                console.error('Error loading subscriptions:', error);
+                document.getElementById('subscriptions-container').innerHTML =
+                    `<div class="empty-state"><p>Error loading subscriptions</p></div>`;
+            }
+        }
+
+        function openAddModal() {
+            document.getElementById('modal-title').textContent = 'Add Subscription';
+            document.getElementById('subscription-form').reset();
+            document.getElementById('subscription-id').value = '';
+            document.getElementById('subscription-modal').classList.add('active');
+        }
+
+        async function editSubscription(id) {
+            try {
+                const response = await fetch(`${API_BASE}/subscriptions/${id}`);
+                const subscription = await response.json();
+
+                document.getElementById('modal-title').textContent = 'Edit Subscription';
+                document.getElementById('subscription-id').value = subscription.id;
+                document.getElementById('name').value = subscription.name;
+                document.getElementById('description').value = subscription.description || '';
+                document.getElementById('cost').value = (subscription.costCents / 100).toFixed(2);
+                document.getElementById('billing-frequency').value = subscription.billingFrequency;
+                document.getElementById('category').value = subscription.category || '';
+
+                document.getElementById('subscription-modal').classList.add('active');
+            } catch (error) {
+                console.error('Error loading subscription:', error);
+                alert('Error loading subscription');
+            }
+        }
+
+        async function saveSubscription(event) {
+            event.preventDefault();
+
+            const id = document.getElementById('subscription-id').value;
+            const data = {
+                name: document.getElementById('name').value,
+                description: document.getElementById('description').value || undefined,
+                costCents: Math.round(parseFloat(document.getElementById('cost').value) * 100),
+                billingFrequency: document.getElementById('billing-frequency').value,
+                category: document.getElementById('category').value || undefined,
+            };
+
+            try {
+                const url = id ? `${API_BASE}/subscriptions/${id}` : `${API_BASE}/subscriptions`;
+                const method = id ? 'PUT' : 'POST';
+
+                const response = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    closeModal();
+                    await loadData();
+                } else {
+                    alert('Error saving subscription');
+                }
+            } catch (error) {
+                console.error('Error saving subscription:', error);
+                alert('Error saving subscription');
+            }
+        }
+
+        async function deleteSubscription(id) {
+            if (!confirm('Are you sure you want to delete this subscription?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/subscriptions/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    await loadData();
+                } else {
+                    alert('Error deleting subscription');
+                }
+            } catch (error) {
+                console.error('Error deleting subscription:', error);
+                alert('Error deleting subscription');
+            }
+        }
+
+        async function logUsage(id) {
+            try {
+                const response = await fetch(`${API_BASE}/subscriptions/${id}/usage`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ quantity: 1 })
+                });
+
+                if (response.ok) {
+                    // Show success feedback
+                    const button = event.target;
+                    const originalText = button.textContent;
+                    button.textContent = '✓ Logged!';
+                    button.style.background = '#38a169';
+                    setTimeout(() => {
+                        button.textContent = originalText;
+                        button.style.background = '';
+                    }, 2000);
+                } else {
+                    alert('Error logging usage');
+                }
+            } catch (error) {
+                console.error('Error logging usage:', error);
+                alert('Error logging usage');
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('subscription-modal').classList.remove('active');
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('subscription-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'subscription-modal') {
+                closeModal();
+            }
+        });
+
+        // Load data on page load
+        loadData();
+    </script>
+</body>
+</html>
