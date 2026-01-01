@@ -39,7 +39,7 @@
 
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 20px;
             margin-bottom: 30px;
         }
@@ -76,6 +76,49 @@
         .card h2 {
             margin-bottom: 20px;
             color: #2d3748;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 10px;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 0.95em;
+            font-weight: 500;
+            color: #718096;
+            border-radius: 8px 8px 0 0;
+            transition: all 0.2s;
+        }
+
+        .tab:hover {
+            color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .tab.active {
+            color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+            border-bottom: 2px solid #667eea;
+            margin-bottom: -12px;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
         }
 
         .btn {
@@ -244,18 +287,226 @@
             color: #718096;
         }
 
-        .empty-state svg {
-            width: 80px;
-            height: 80px;
-            margin-bottom: 20px;
-            opacity: 0.5;
+        /* Alert Styles */
+        .alert-item {
+            display: flex;
+            align-items: flex-start;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            gap: 12px;
+        }
+
+        .alert-high {
+            background: #fed7d7;
+            border-left: 4px solid #f56565;
+        }
+
+        .alert-medium {
+            background: #fefcbf;
+            border-left: 4px solid #ecc94b;
+        }
+
+        .alert-low {
+            background: #bee3f8;
+            border-left: 4px solid #4299e1;
+        }
+
+        .alert-icon {
+            font-size: 1.5em;
+        }
+
+        .alert-content {
+            flex: 1;
+        }
+
+        .alert-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .alert-message {
+            font-size: 0.875em;
+            color: #4a5568;
+        }
+
+        /* Value Score Styles */
+        .value-score {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        .score-high {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .score-medium {
+            background: #fefcbf;
+            color: #744210;
+        }
+
+        .score-low {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+
+        /* Chart Styles */
+        .chart-container {
+            position: relative;
+            height: 200px;
+            margin: 20px 0;
+        }
+
+        .bar-chart {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-around;
+            height: 100%;
+            padding: 10px 0;
+            gap: 8px;
+        }
+
+        .bar-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+            max-width: 80px;
+        }
+
+        .bar {
+            width: 100%;
+            background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+            border-radius: 4px 4px 0 0;
+            min-height: 4px;
+            transition: height 0.3s ease;
+        }
+
+        .bar-label {
+            font-size: 0.75em;
+            color: #718096;
+            margin-top: 8px;
+            text-align: center;
+        }
+
+        .bar-value {
+            font-size: 0.75em;
+            color: #2d3748;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        /* Category Breakdown */
+        .category-list {
+            display: grid;
+            gap: 15px;
+        }
+
+        .category-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .category-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+
+        .category-info {
+            flex: 1;
+        }
+
+        .category-name {
+            font-weight: 500;
+        }
+
+        .category-details {
+            font-size: 0.875em;
+            color: #718096;
+        }
+
+        .category-amount {
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .category-bar {
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        .category-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        /* Value Rankings */
+        .ranking-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #e2e8f0;
+            gap: 15px;
+        }
+
+        .ranking-item:last-child {
+            border-bottom: none;
+        }
+
+        .ranking-position {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f7fafc;
+            border-radius: 50%;
+            font-weight: 600;
+            font-size: 0.875em;
+        }
+
+        .ranking-info {
+            flex: 1;
+        }
+
+        .ranking-name {
+            font-weight: 500;
+        }
+
+        .ranking-details {
+            font-size: 0.875em;
+            color: #718096;
+        }
+
+        /* Grid Layout for Analytics */
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .analytics-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
     <header>
         <div class="container">
-            <h1>💳 Subscription Manager</h1>
+            <h1>Subscription Manager</h1>
             <p>Track subscriptions, measure usage, make data-driven decisions</p>
         </div>
     </header>
@@ -275,18 +526,85 @@
                 <h3>Active Subscriptions</h3>
                 <div class="value" id="active-count">0</div>
             </div>
+            <div class="stat-card">
+                <h3>Avg Value Score</h3>
+                <div class="value" id="avg-value-score">--</div>
+            </div>
         </div>
 
-        <!-- Subscriptions List -->
-        <div class="card">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h2>Your Subscriptions</h2>
-                <button class="btn" onclick="openAddModal()">+ Add Subscription</button>
+        <!-- Tabs Navigation -->
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('subscriptions')">Subscriptions</button>
+            <button class="tab" onclick="switchTab('analytics')">Analytics</button>
+            <button class="tab" onclick="switchTab('alerts')">Alerts <span id="alert-count-badge"></span></button>
+        </div>
+
+        <!-- Subscriptions Tab -->
+        <div id="tab-subscriptions" class="tab-content active">
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2>Your Subscriptions</h2>
+                    <button class="btn" onclick="openAddModal()">+ Add Subscription</button>
+                </div>
+
+                <div id="subscriptions-container">
+                    <div class="empty-state">
+                        <p>Loading subscriptions...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Tab -->
+        <div id="tab-analytics" class="tab-content">
+            <div class="analytics-grid">
+                <!-- Value Rankings -->
+                <div class="card">
+                    <h2>Value Rankings</h2>
+                    <p style="color: #718096; font-size: 0.875em; margin-bottom: 15px;">Best value subscriptions based on usage and cost</p>
+                    <div id="value-rankings">
+                        <div class="empty-state"><p>Loading...</p></div>
+                    </div>
+                </div>
+
+                <!-- Category Breakdown -->
+                <div class="card">
+                    <h2>Spending by Category</h2>
+                    <p style="color: #718096; font-size: 0.875em; margin-bottom: 15px;">Monthly spending breakdown</p>
+                    <div id="category-breakdown">
+                        <div class="empty-state"><p>Loading...</p></div>
+                    </div>
+                </div>
             </div>
 
-            <div id="subscriptions-container">
-                <div class="empty-state">
-                    <p>Loading subscriptions...</p>
+            <!-- Usage Trends Chart -->
+            <div class="card">
+                <h2>Monthly Spending Trend</h2>
+                <p style="color: #718096; font-size: 0.875em; margin-bottom: 15px;">Your spending over the last 12 months</p>
+                <div class="chart-container">
+                    <div id="spending-trend-chart" class="bar-chart">
+                        <div class="empty-state"><p>Loading...</p></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cost-per-use Leaderboard -->
+            <div class="card">
+                <h2>Cost-per-Use Leaderboard</h2>
+                <p style="color: #718096; font-size: 0.875em; margin-bottom: 15px;">Which subscriptions give you the best value per use</p>
+                <div id="cost-leaderboard">
+                    <div class="empty-state"><p>Loading...</p></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alerts Tab -->
+        <div id="tab-alerts" class="tab-content">
+            <div class="card">
+                <h2>Needs Attention</h2>
+                <p style="color: #718096; font-size: 0.875em; margin-bottom: 15px;">Subscriptions that may need review</p>
+                <div id="alerts-container">
+                    <div class="empty-state"><p>Loading...</p></div>
                 </div>
             </div>
         </div>
@@ -350,33 +668,99 @@
     <script>
         const API_BASE = 'http://localhost:3000/api';
 
+        // Category colors for charts
+        const CATEGORY_COLORS = {
+            streaming: '#e53e3e',
+            productivity: '#3182ce',
+            gaming: '#805ad5',
+            news: '#38a169',
+            fitness: '#d69e2e',
+            education: '#00b5d8',
+            music: '#ed64a6',
+            other: '#718096'
+        };
+
+        // Tab switching
+        function switchTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelector(`.tab[onclick="switchTab('${tabName}')"]`).classList.add('active');
+
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+
+            // Load data for the tab
+            if (tabName === 'analytics') {
+                loadAnalytics();
+            } else if (tabName === 'alerts') {
+                loadAlerts();
+            }
+        }
+
         // Load initial data
         async function loadData() {
             await Promise.all([
                 loadStats(),
-                loadSubscriptions()
+                loadSubscriptions(),
+                loadAlertCount()
             ]);
         }
 
         async function loadStats() {
             try {
-                const response = await fetch(`${API_BASE}/subscriptions/stats`);
-                const stats = await response.json();
+                const [statsResponse, valueScoresResponse] = await Promise.all([
+                    fetch(`${API_BASE}/subscriptions/stats`),
+                    fetch(`${API_BASE}/analytics/value-scores`)
+                ]);
+
+                const stats = await statsResponse.json();
+                const valueScores = await valueScoresResponse.json();
 
                 document.getElementById('monthly-total').textContent =
                     `$${(stats.monthlyTotal / 100).toFixed(2)}`;
                 document.getElementById('yearly-total').textContent =
                     `$${(stats.yearlyTotal / 100).toFixed(2)}`;
                 document.getElementById('active-count').textContent = stats.activeCount;
+
+                // Calculate average value score
+                if (valueScores.length > 0) {
+                    const avgScore = valueScores.reduce((sum, v) => sum + v.score, 0) / valueScores.length;
+                    document.getElementById('avg-value-score').textContent = Math.round(avgScore);
+                }
             } catch (error) {
                 console.error('Error loading stats:', error);
             }
         }
 
+        async function loadAlertCount() {
+            try {
+                const response = await fetch(`${API_BASE}/analytics/alerts`);
+                const alerts = await response.json();
+                const badge = document.getElementById('alert-count-badge');
+                if (alerts.length > 0) {
+                    badge.textContent = `(${alerts.length})`;
+                    badge.style.color = '#f56565';
+                } else {
+                    badge.textContent = '';
+                }
+            } catch (error) {
+                console.error('Error loading alert count:', error);
+            }
+        }
+
         async function loadSubscriptions() {
             try {
-                const response = await fetch(`${API_BASE}/subscriptions`);
-                const subscriptions = await response.json();
+                const [subsResponse, valueScoresResponse] = await Promise.all([
+                    fetch(`${API_BASE}/subscriptions`),
+                    fetch(`${API_BASE}/analytics/value-scores`)
+                ]);
+
+                const subscriptions = await subsResponse.json();
+                const valueScores = await valueScoresResponse.json();
+
+                // Create a map of subscription ID to value score
+                const scoreMap = new Map(valueScores.map(v => [v.subscriptionId, v]));
 
                 const container = document.getElementById('subscriptions-container');
 
@@ -397,25 +781,34 @@
                                 <th>Category</th>
                                 <th>Cost</th>
                                 <th>Frequency</th>
-                                <th>Status</th>
+                                <th>Value Score</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            ${subscriptions.map(sub => `
-                                <tr>
-                                    <td><strong>${sub.name}</strong>${sub.description ? `<br><small style="color: #718096;">${sub.description}</small>` : ''}</td>
-                                    <td>${sub.category || '-'}</td>
-                                    <td>$${(sub.costCents / 100).toFixed(2)}</td>
-                                    <td>${sub.billingFrequency}</td>
-                                    <td><span class="badge badge-${sub.status}">${sub.status}</span></td>
-                                    <td>
-                                        <button class="usage-btn" onclick="logUsage('${sub.id}')">✓ Log Usage</button>
-                                        <button class="btn btn-small" onclick="editSubscription('${sub.id}')">Edit</button>
-                                        <button class="btn btn-danger btn-small" onclick="deleteSubscription('${sub.id}')">Delete</button>
-                                    </td>
-                                </tr>
-                            `).join('')}
+                            ${subscriptions.map(sub => {
+                                const score = scoreMap.get(sub.id);
+                                const scoreClass = score ? (score.score >= 70 ? 'score-high' : score.score >= 40 ? 'score-medium' : 'score-low') : '';
+                                const scoreDisplay = score ? `<span class="value-score ${scoreClass}">${score.score}</span>` : '--';
+
+                                return `
+                                    <tr>
+                                        <td>
+                                            <strong>${sub.name}</strong>
+                                            ${sub.description ? `<br><small style="color: #718096;">${sub.description}</small>` : ''}
+                                        </td>
+                                        <td>${sub.category || '-'}</td>
+                                        <td>$${(sub.costCents / 100).toFixed(2)}</td>
+                                        <td>${sub.billingFrequency}</td>
+                                        <td>${scoreDisplay}</td>
+                                        <td>
+                                            <button class="usage-btn" onclick="logUsage('${sub.id}', event)">Log Use</button>
+                                            <button class="btn btn-small" onclick="editSubscription('${sub.id}')">Edit</button>
+                                            <button class="btn btn-danger btn-small" onclick="deleteSubscription('${sub.id}')">Delete</button>
+                                        </td>
+                                    </tr>
+                                `;
+                            }).join('')}
                         </tbody>
                     </table>
                 `;
@@ -424,6 +817,206 @@
                 document.getElementById('subscriptions-container').innerHTML =
                     `<div class="empty-state"><p>Error loading subscriptions</p></div>`;
             }
+        }
+
+        async function loadAnalytics() {
+            await Promise.all([
+                loadValueRankings(),
+                loadCategoryBreakdown(),
+                loadSpendingTrend(),
+                loadCostLeaderboard()
+            ]);
+        }
+
+        async function loadValueRankings() {
+            try {
+                const response = await fetch(`${API_BASE}/analytics/value-scores`);
+                const scores = await response.json();
+
+                const container = document.getElementById('value-rankings');
+
+                if (scores.length === 0) {
+                    container.innerHTML = '<div class="empty-state"><p>No data yet. Add subscriptions and log usage!</p></div>';
+                    return;
+                }
+
+                container.innerHTML = scores.slice(0, 5).map((score, index) => {
+                    const scoreClass = score.score >= 70 ? 'score-high' : score.score >= 40 ? 'score-medium' : 'score-low';
+                    return `
+                        <div class="ranking-item">
+                            <div class="ranking-position">${index + 1}</div>
+                            <div class="ranking-info">
+                                <div class="ranking-name">${score.subscriptionName}</div>
+                                <div class="ranking-details">
+                                    ${score.monthlyUsage} uses this month
+                                    ${score.costPerUse ? ` · $${(score.costPerUse / 100).toFixed(2)}/use` : ''}
+                                </div>
+                            </div>
+                            <span class="value-score ${scoreClass}">${score.score}</span>
+                        </div>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('Error loading value rankings:', error);
+            }
+        }
+
+        async function loadCategoryBreakdown() {
+            try {
+                const response = await fetch(`${API_BASE}/analytics/spending-by-category`);
+                const categories = await response.json();
+
+                const container = document.getElementById('category-breakdown');
+
+                if (categories.length === 0) {
+                    container.innerHTML = '<div class="empty-state"><p>No data yet.</p></div>';
+                    return;
+                }
+
+                const maxSpend = Math.max(...categories.map(c => c.monthlyTotal));
+
+                container.innerHTML = `
+                    <div class="category-list">
+                        ${categories.map(cat => {
+                            const color = CATEGORY_COLORS[cat.category] || CATEGORY_COLORS.other;
+                            const percentage = (cat.monthlyTotal / maxSpend) * 100;
+                            return `
+                                <div class="category-item">
+                                    <div class="category-color" style="background: ${color}"></div>
+                                    <div class="category-info">
+                                        <div class="category-name">${cat.category.charAt(0).toUpperCase() + cat.category.slice(1)}</div>
+                                        <div class="category-details">${cat.count} subscription${cat.count !== 1 ? 's' : ''}</div>
+                                        <div class="category-bar">
+                                            <div class="category-bar-fill" style="width: ${percentage}%; background: ${color}"></div>
+                                        </div>
+                                    </div>
+                                    <div class="category-amount">$${(cat.monthlyTotal / 100).toFixed(2)}/mo</div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error loading category breakdown:', error);
+            }
+        }
+
+        async function loadSpendingTrend() {
+            try {
+                const response = await fetch(`${API_BASE}/analytics/spending-trend?months=12`);
+                const trend = await response.json();
+
+                const container = document.getElementById('spending-trend-chart');
+
+                if (trend.length === 0) {
+                    container.innerHTML = '<div class="empty-state"><p>No data yet.</p></div>';
+                    return;
+                }
+
+                const maxSpend = Math.max(...trend.map(t => t.total));
+                const chartHeight = 150; // pixels
+
+                container.innerHTML = trend.map(t => {
+                    const barHeight = maxSpend > 0 ? (t.total / maxSpend) * chartHeight : 0;
+                    return `
+                        <div class="bar-group">
+                            <div class="bar-value">$${(t.total / 100).toFixed(0)}</div>
+                            <div class="bar" style="height: ${barHeight}px"></div>
+                            <div class="bar-label">${t.month.split(' ')[0]}</div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error('Error loading spending trend:', error);
+            }
+        }
+
+        async function loadCostLeaderboard() {
+            try {
+                const response = await fetch(`${API_BASE}/analytics/cost-leaderboard`);
+                const leaderboard = await response.json();
+
+                const container = document.getElementById('cost-leaderboard');
+
+                if (leaderboard.length === 0) {
+                    container.innerHTML = '<div class="empty-state"><p>Log some usage to see cost-per-use data!</p></div>';
+                    return;
+                }
+
+                container.innerHTML = `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Subscription</th>
+                                <th>Category</th>
+                                <th>Uses/Month</th>
+                                <th>Cost/Use</th>
+                                <th>Value Score</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${leaderboard.slice(0, 10).map(item => {
+                                const scoreClass = item.score >= 70 ? 'score-high' : item.score >= 40 ? 'score-medium' : 'score-low';
+                                return `
+                                    <tr>
+                                        <td><strong>${item.subscriptionName}</strong></td>
+                                        <td>${item.category}</td>
+                                        <td>${item.monthlyUsage}</td>
+                                        <td>$${(item.costPerUse / 100).toFixed(2)}</td>
+                                        <td><span class="value-score ${scoreClass}">${item.score}</span></td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } catch (error) {
+                console.error('Error loading cost leaderboard:', error);
+            }
+        }
+
+        async function loadAlerts() {
+            try {
+                const response = await fetch(`${API_BASE}/analytics/alerts`);
+                const alerts = await response.json();
+
+                const container = document.getElementById('alerts-container');
+
+                if (alerts.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <p style="color: #38a169; font-size: 1.2em; font-weight: 500;">All good!</p>
+                            <p>No subscriptions need attention right now.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const alertIcons = {
+                    no_usage: '!',
+                    low_value: '!',
+                    high_cost: '$',
+                    trial_ending: '!'
+                };
+
+                container.innerHTML = alerts.map(alert => `
+                    <div class="alert-item alert-${alert.severity}">
+                        <div class="alert-icon">${alertIcons[alert.type] || '!'}</div>
+                        <div class="alert-content">
+                            <div class="alert-title">${alert.subscriptionName}</div>
+                            <div class="alert-message">${alert.message}</div>
+                        </div>
+                        <button class="btn btn-small" onclick="viewSubscription('${alert.subscriptionId}')">View</button>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading alerts:', error);
+            }
+        }
+
+        function viewSubscription(id) {
+            switchTab('subscriptions');
+            // Could scroll to the subscription or open a detail view
         }
 
         function openAddModal() {
@@ -508,7 +1101,7 @@
             }
         }
 
-        async function logUsage(id) {
+        async function logUsage(id, event) {
             try {
                 const response = await fetch(`${API_BASE}/subscriptions/${id}/usage`, {
                     method: 'POST',
@@ -520,12 +1113,16 @@
                     // Show success feedback
                     const button = event.target;
                     const originalText = button.textContent;
-                    button.textContent = '✓ Logged!';
+                    button.textContent = 'Logged!';
                     button.style.background = '#38a169';
                     setTimeout(() => {
                         button.textContent = originalText;
                         button.style.background = '';
                     }, 2000);
+
+                    // Refresh stats
+                    await loadStats();
+                    await loadAlertCount();
                 } else {
                     alert('Error logging usage');
                 }

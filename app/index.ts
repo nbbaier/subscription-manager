@@ -2,6 +2,7 @@
 import { initializeDatabase } from './lib/db/index.ts';
 import { SubscriptionService } from './lib/services/subscription.ts';
 import { UsageService } from './lib/services/usage.ts';
+import { AnalyticsService } from './lib/services/analytics.ts';
 
 // Initialize database on startup
 initializeDatabase();
@@ -125,6 +126,73 @@ const server = Bun.serve({
         if (getStatsMatch && req.method === 'GET') {
           const stats = UsageService.getUsageStats(getStatsMatch[1]);
           return new Response(JSON.stringify(stats), { headers });
+        }
+
+        // GET /api/subscriptions/:id/trend - Get usage trend for a subscription
+        const getTrendMatch = path.match(/^\/api\/subscriptions\/([^\/]+)\/trend$/);
+        if (getTrendMatch && req.method === 'GET') {
+          const months = parseInt(url.searchParams.get('months') || '6');
+          const trend = AnalyticsService.getUsageTrend(getTrendMatch[1], months);
+          return new Response(JSON.stringify(trend), { headers });
+        }
+
+        // GET /api/subscriptions/:id/value-score - Get value score for a subscription
+        const getValueScoreMatch = path.match(/^\/api\/subscriptions\/([^\/]+)\/value-score$/);
+        if (getValueScoreMatch && req.method === 'GET') {
+          const score = AnalyticsService.calculateValueScore(getValueScoreMatch[1]);
+          if (!score) {
+            return new Response(JSON.stringify({ error: 'Subscription not found' }), {
+              status: 404,
+              headers
+            });
+          }
+          return new Response(JSON.stringify(score), { headers });
+        }
+
+        // ==================== ANALYTICS ENDPOINTS ====================
+
+        // GET /api/analytics/value-scores - Get all value scores ranked
+        if (path === '/api/analytics/value-scores' && req.method === 'GET') {
+          const scores = AnalyticsService.getAllValueScores();
+          return new Response(JSON.stringify(scores), { headers });
+        }
+
+        // GET /api/analytics/alerts - Get all alerts
+        if (path === '/api/analytics/alerts' && req.method === 'GET') {
+          const alerts = AnalyticsService.getAlerts();
+          return new Response(JSON.stringify(alerts), { headers });
+        }
+
+        // GET /api/analytics/spending-by-category - Get spending breakdown by category
+        if (path === '/api/analytics/spending-by-category' && req.method === 'GET') {
+          const categories = AnalyticsService.getSpendingByCategory();
+          return new Response(JSON.stringify(categories), { headers });
+        }
+
+        // GET /api/analytics/spending-trend - Get monthly spending trend
+        if (path === '/api/analytics/spending-trend' && req.method === 'GET') {
+          const months = parseInt(url.searchParams.get('months') || '12');
+          const trend = AnalyticsService.getMonthlySpendingTrend(months);
+          return new Response(JSON.stringify(trend), { headers });
+        }
+
+        // GET /api/analytics/cost-leaderboard - Get cost-per-use leaderboard
+        if (path === '/api/analytics/cost-leaderboard' && req.method === 'GET') {
+          const leaderboard = AnalyticsService.getCostPerUseLeaderboard();
+          return new Response(JSON.stringify(leaderboard), { headers });
+        }
+
+        // GET /api/analytics/usage-trends - Get usage trends for all subscriptions
+        if (path === '/api/analytics/usage-trends' && req.method === 'GET') {
+          const months = parseInt(url.searchParams.get('months') || '6');
+          const trends = AnalyticsService.getAllUsageTrends(months);
+          return new Response(JSON.stringify(trends), { headers });
+        }
+
+        // POST /api/analytics/compute-stats - Trigger stats computation
+        if (path === '/api/analytics/compute-stats' && req.method === 'POST') {
+          AnalyticsService.computeAllStats();
+          return new Response(JSON.stringify({ success: true, message: 'Stats computed' }), { headers });
         }
 
         return new Response(JSON.stringify({ error: 'Not found' }), {
