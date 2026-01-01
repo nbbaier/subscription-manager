@@ -325,11 +325,7 @@ const server = Bun.serve({
 
 					const redirectUri =
 						url.searchParams.get("redirect_uri") ||
-					const host = req.headers.get('host') || 'localhost:3000';
-					const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
-					const redirectUri =
-						url.searchParams.get("redirect_uri") ||
-						`${protocol}://${host}/api/integrations/${serviceName}/callback`;
+						`${url.origin}/api/integrations/${serviceName}/callback`;
 
 					try {
 						const authUrl = IntegrationService.generateAuthUrl(
