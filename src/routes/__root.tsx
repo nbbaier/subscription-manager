@@ -1,5 +1,6 @@
 /// <reference types="vite/client" />
 
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
 	createRootRoute,
 	HeadContent,
@@ -9,6 +10,15 @@ import {
 } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import appCss from "~/styles.css?url";
+
+const queryClient = new QueryClient({
+	defaultOptions: {
+		queries: {
+			staleTime: 1000 * 60, // 1 minute
+			refetchOnWindowFocus: false,
+		},
+	},
+});
 
 export const Route = createRootRoute({
 	head: () => ({
@@ -37,12 +47,14 @@ export const Route = createRootRoute({
 function RootComponent() {
 	return (
 		<RootDocument>
-			<div className="min-h-screen bg-gray-50">
-				<Navigation />
-				<main className="container mx-auto py-6 px-4">
-					<Outlet />
-				</main>
-			</div>
+			<QueryClientProvider client={queryClient}>
+				<div className="min-h-screen bg-gray-50">
+					<Navigation />
+					<main className="container mx-auto py-6 px-4">
+						<Outlet />
+					</main>
+				</div>
+			</QueryClientProvider>
 		</RootDocument>
 	);
 }
