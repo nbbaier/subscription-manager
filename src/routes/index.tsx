@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { format, formatDistanceToNow } from "date-fns";
+import { format } from "date-fns";
 
-const API_BASE = "http://localhost:3000";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
 
 // Types
 interface Stats {
@@ -43,30 +43,53 @@ export const Route = createFileRoute("/")({
 });
 
 function Dashboard() {
-	const { data: stats, isLoading: statsLoading } = useQuery<Stats>({
+	const {
+		data: stats,
+		isLoading: statsLoading,
+		error: _statsError,
+	} = useQuery<Stats>({
 		queryKey: ["stats"],
-		queryFn: () => fetch(`${API_BASE}/api/subscriptions/stats`).then((r) => r.json()),
+		queryFn: async () => {
+			const response = await fetch(`${API_BASE}/api/subscriptions/stats`);
+			if (!response.ok) throw new Error("Failed to fetch stats");
+			return response.json();
+		},
 	});
-
-	const { data: valueScores } = useQuery<ValueScore[]>({
+	const { data: valueScores, error: _valueScoresError } = useQuery<
+		ValueScore[]
+	>({
 		queryKey: ["valueScores"],
-		queryFn: () => fetch(`${API_BASE}/api/analytics/value-scores`).then((r) => r.json()),
+		queryFn: async () => {
+			const response = await fetch(`${API_BASE}/api/analytics/value-scores`);
+			if (!response.ok) throw new Error("Failed to fetch value scores");
+			return response.json();
+		},
 	});
-
-	const { data: alerts } = useQuery<Alert[]>({
+	const { data: alerts, error: _alertsError } = useQuery<Alert[]>({
 		queryKey: ["alerts"],
-		queryFn: () => fetch(`${API_BASE}/api/analytics/alerts`).then((r) => r.json()),
+		queryFn: async () => {
+			const response = await fetch(`${API_BASE}/api/analytics/alerts`);
+			if (!response.ok) throw new Error("Failed to fetch alerts");
+			return response.json();
+		},
 	});
-
-	const { data: subscriptions } = useQuery<Subscription[]>({
+	const { data: subscriptions, error: _subscriptionsError } = useQuery<
+		Subscription[]
+	>({
 		queryKey: ["subscriptions"],
-		queryFn: () => fetch(`${API_BASE}/api/subscriptions`).then((r) => r.json()),
+		queryFn: async () => {
+			const response = await fetch(`${API_BASE}/api/subscriptions`);
+			if (!response.ok) throw new Error("Failed to fetch subscriptions");
+			return response.json();
+		},
 	});
 
 	// Calculate average value score
 	const avgValueScore =
 		valueScores && valueScores.length > 0
-			? Math.round(valueScores.reduce((sum, v) => sum + v.score, 0) / valueScores.length)
+			? Math.round(
+					valueScores.reduce((sum, v) => sum + v.score, 0) / valueScores.length,
+				)
 			: null;
 
 	// Get upcoming bills (next 14 days)
@@ -131,7 +154,9 @@ function Dashboard() {
 			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
 				<StatCard
 					title="Monthly Total"
-					value={statsLoading ? "..." : formatCurrency(stats?.monthlyTotal || 0)}
+					value={
+						statsLoading ? "..." : formatCurrency(stats?.monthlyTotal || 0)
+					}
 					loading={statsLoading}
 				/>
 				<StatCard
@@ -148,7 +173,9 @@ function Dashboard() {
 					title="Avg Value Score"
 					value={avgValueScore !== null ? `${avgValueScore}` : "--"}
 					loading={!valueScores}
-					valueColor={avgValueScore !== null ? getScoreColor(avgValueScore) : undefined}
+					valueColor={
+						avgValueScore !== null ? getScoreColor(avgValueScore) : undefined
+					}
 				/>
 			</div>
 
@@ -159,7 +186,9 @@ function Dashboard() {
 						⚠️ Needs Attention
 					</h3>
 					{!alerts || alerts.length === 0 ? (
-						<p className="text-gray-500 text-sm">No alerts - everything looks good!</p>
+						<p className="text-gray-500 text-sm">
+							No alerts - everything looks good!
+						</p>
 					) : (
 						<div className="space-y-3">
 							{alerts.slice(0, 5).map((alert, i) => (
@@ -171,14 +200,19 @@ function Dashboard() {
 									<div className="flex items-start gap-2">
 										<span>{getAlertIcon(alert.severity)}</span>
 										<div>
-											<p className="font-medium text-gray-900">{alert.subscriptionName}</p>
+											<p className="font-medium text-gray-900">
+												{alert.subscriptionName}
+											</p>
 											<p className="text-sm text-gray-600">{alert.message}</p>
 										</div>
 									</div>
 								</Link>
 							))}
 							{alerts.length > 5 && (
-								<Link to="/analytics" className="text-sm text-indigo-600 hover:underline">
+								<Link
+									to="/analytics"
+									className="text-sm text-indigo-600 hover:underline"
+								>
 									View all {alerts.length} alerts →
 								</Link>
 							)}
@@ -192,7 +226,9 @@ function Dashboard() {
 						📅 Upcoming Bills (Next 14 Days)
 					</h3>
 					{!upcomingBills || upcomingBills.length === 0 ? (
-						<p className="text-gray-500 text-sm">No upcoming bills in the next 14 days</p>
+						<p className="text-gray-500 text-sm">
+							No upcoming bills in the next 14 days
+						</p>
 					) : (
 						<div className="space-y-3">
 							{upcomingBills.map((sub) => (
@@ -235,26 +271,36 @@ function Dashboard() {
 								className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
 							>
 								<div className="flex items-center gap-3">
-									<span className={`font-bold text-lg ${getScoreColor(vs.score)}`}>
+									<span
+										className={`font-bold text-lg ${getScoreColor(vs.score)}`}
+									>
 										{vs.score}
 									</span>
 									<div>
-										<p className="font-medium text-gray-900">{vs.subscriptionName}</p>
+										<p className="font-medium text-gray-900">
+											{vs.subscriptionName}
+										</p>
 										<p className="text-sm text-gray-500">
 											{vs.costPerUse !== null
 												? `$${(vs.costPerUse / 100).toFixed(2)}/use`
 												: "No usage data"}
-											{vs.monthlyUsage > 0 && ` · ${vs.monthlyUsage} uses this month`}
+											{vs.monthlyUsage > 0 &&
+												` · ${vs.monthlyUsage} uses this month`}
 										</p>
 									</div>
 								</div>
-								<span className={`px-2 py-1 rounded text-xs font-medium ${getScoreBadge(vs.score)}`}>
+								<span
+									className={`px-2 py-1 rounded text-xs font-medium ${getScoreBadge(vs.score)}`}
+								>
 									{vs.score >= 70 ? "Great" : vs.score >= 40 ? "OK" : "Review"}
 								</span>
 							</div>
 						))}
 						{valueScores.length > 6 && (
-							<Link to="/analytics" className="block text-center text-sm text-indigo-600 hover:underline pt-2">
+							<Link
+								to="/analytics"
+								className="block text-center text-sm text-indigo-600 hover:underline pt-2"
+							>
 								View all {valueScores.length} subscriptions →
 							</Link>
 						)}
@@ -281,7 +327,9 @@ function StatCard({
 			<h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide">
 				{title}
 			</h3>
-			<p className={`mt-2 text-3xl font-bold ${valueColor || "text-indigo-600"}`}>
+			<p
+				className={`mt-2 text-3xl font-bold ${valueColor || "text-indigo-600"}`}
+			>
 				{loading ? (
 					<span className="inline-block w-20 h-8 bg-gray-200 animate-pulse rounded" />
 				) : (
