@@ -47,18 +47,27 @@ subscription-manager/
 
 ### Installation & Running
 
-1. **Start the server:**
+1. **Clone and install dependencies:**
    ```bash
-   bun run app/index.ts
+   git clone https://github.com/nbbaier/subscription-manager.git
+   cd subscription-manager
+   bun install
    ```
 
-2. **Access the dashboard:**
-   Open your browser to [http://localhost:3000](http://localhost:3000)
+2. **Set up the database:**
+   ```bash
+   bun run db:push
+   ```
 
-3. **API is available at:**
-   `http://localhost:3000/api/subscriptions`
+3. **Start the development server:**
+   ```bash
+   bun run dev
+   ```
 
-The database will be automatically created on first run.
+4. **Open the app:**
+   Visit [http://localhost:3000](http://localhost:3000) in your browser
+
+The SQLite database (`subscriptions.db`) is created automatically and stored locally.
 
 ## API Documentation
 
