@@ -1,6 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { format } from "date-fns";
+import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
 
@@ -43,11 +53,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Dashboard() {
-	const {
-		data: stats,
-		isLoading: statsLoading,
-		error: _statsError,
-	} = useQuery<Stats>({
+	const { data: stats, isLoading: statsLoading } = useQuery<Stats>({
 		queryKey: ["stats"],
 		queryFn: async () => {
 			const response = await fetch(`${API_BASE}/api/subscriptions/stats`);
@@ -55,9 +61,7 @@ function Dashboard() {
 			return response.json();
 		},
 	});
-	const { data: valueScores, error: _valueScoresError } = useQuery<
-		ValueScore[]
-	>({
+	const { data: valueScores } = useQuery<ValueScore[]>({
 		queryKey: ["valueScores"],
 		queryFn: async () => {
 			const response = await fetch(`${API_BASE}/api/analytics/value-scores`);
@@ -65,7 +69,7 @@ function Dashboard() {
 			return response.json();
 		},
 	});
-	const { data: alerts, error: _alertsError } = useQuery<Alert[]>({
+	const { data: alerts } = useQuery<Alert[]>({
 		queryKey: ["alerts"],
 		queryFn: async () => {
 			const response = await fetch(`${API_BASE}/api/analytics/alerts`);
@@ -73,9 +77,7 @@ function Dashboard() {
 			return response.json();
 		},
 	});
-	const { data: subscriptions, error: _subscriptionsError } = useQuery<
-		Subscription[]
-	>({
+	const { data: subscriptions } = useQuery<Subscription[]>({
 		queryKey: ["subscriptions"],
 		queryFn: async () => {
 			const response = await fetch(`${API_BASE}/api/subscriptions`);
@@ -118,18 +120,18 @@ function Dashboard() {
 		return "text-red-600";
 	};
 
-	// Get score badge
-	const getScoreBadge = (score: number) => {
-		if (score >= 70) return "bg-green-100 text-green-800";
-		if (score >= 40) return "bg-yellow-100 text-yellow-800";
-		return "bg-red-100 text-red-800";
+	// Get score badge variant
+	const getScoreBadgeVariant = (score: number) => {
+		if (score >= 70) return "default";
+		if (score >= 40) return "secondary";
+		return "destructive";
 	};
 
 	// Get alert severity color
 	const getAlertColor = (severity: string) => {
-		if (severity === "high") return "border-red-400 bg-red-50";
-		if (severity === "medium") return "border-yellow-400 bg-yellow-50";
-		return "border-gray-300 bg-gray-50";
+		if (severity === "high") return "border-red-400 bg-red-50/50";
+		if (severity === "medium") return "border-yellow-400 bg-yellow-50/50";
+		return "border-gray-200 bg-gray-50/50";
 	};
 
 	const getAlertIcon = (severity: string) => {
@@ -141,17 +143,19 @@ function Dashboard() {
 	return (
 		<div className="space-y-6">
 			<div className="flex items-center justify-between">
-				<h2 className="text-3xl font-bold text-gray-900">Dashboard</h2>
+				<h2 className="text-3xl font-bold text-gray-900 tracking-tight">
+					Dashboard
+				</h2>
 				<Link
 					to="/subscriptions"
-					className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
+					className={cn(buttonVariants({ variant: "default" }))}
 				>
 					+ Add Subscription
 				</Link>
 			</div>
 
 			{/* Stats Cards */}
-			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
 				<StatCard
 					title="Monthly Total"
 					value={
@@ -181,132 +185,162 @@ function Dashboard() {
 
 			<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 				{/* Alerts Section */}
-				<div className="bg-white rounded-xl shadow-sm p-6">
-					<h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-						⚠️ Needs Attention
-					</h3>
-					{!alerts || alerts.length === 0 ? (
-						<p className="text-gray-500 text-sm">
-							No alerts - everything looks good!
+				<Card>
+					<CardHeader>
+						<CardTitle className="flex items-center gap-2">
+							⚠️ Needs Attention
+						</CardTitle>
+						<CardDescription>
+							Subscriptions that might need your review
+						</CardDescription>
+					</CardHeader>
+					<CardContent>
+						{!alerts || alerts.length === 0 ? (
+							<p className="text-muted-foreground text-sm">
+								No alerts - everything looks good!
+							</p>
+						) : (
+							<div className="space-y-3">
+								{alerts.slice(0, 5).map((alert, i) => (
+									<Link
+										key={`${alert.subscriptionId}-${i}`}
+										to="/subscriptions"
+										className={cn(
+											"block p-3 rounded-lg border border-l-4 transition-all hover:shadow-sm",
+											getAlertColor(alert.severity),
+										)}
+									>
+										<div className="flex items-start gap-2">
+											<span>{getAlertIcon(alert.severity)}</span>
+											<div>
+												<p className="font-semibold text-gray-900">
+													{alert.subscriptionName}
+												</p>
+												<p className="text-sm text-gray-600">{alert.message}</p>
+											</div>
+										</div>
+									</Link>
+								))}
+								{alerts.length > 5 && (
+									<Link
+										to="/analytics"
+										className="text-sm text-primary hover:underline font-medium block pt-2"
+									>
+										View all {alerts.length} alerts →
+									</Link>
+								)}
+							</div>
+						)}
+					</CardContent>
+				</Card>
+
+				{/* Upcoming Bills Section */}
+				<Card>
+					<CardHeader>
+						<CardTitle className="flex items-center gap-2">
+							📅 Upcoming Bills
+						</CardTitle>
+						<CardDescription>Renewals in the next 14 days</CardDescription>
+					</CardHeader>
+					<CardContent>
+						{!upcomingBills || upcomingBills.length === 0 ? (
+							<p className="text-muted-foreground text-sm">
+								No upcoming bills in the next 14 days
+							</p>
+						) : (
+							<div className="space-y-3">
+								{upcomingBills.map((sub) => (
+									<div
+										key={sub.id}
+										className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border"
+									>
+										<div>
+											<p className="font-semibold text-gray-900">{sub.name}</p>
+											<p className="text-xs text-muted-foreground uppercase font-medium">
+												{sub.next_billing_date
+													? format(
+															new Date(sub.next_billing_date),
+															"MMM d, yyyy",
+														)
+													: "Unknown"}
+											</p>
+										</div>
+										<p className="font-bold text-gray-900">
+											{formatCurrency(sub.cost_cents)}
+										</p>
+									</div>
+								))}
+							</div>
+						)}
+					</CardContent>
+				</Card>
+			</div>
+
+			{/* Value Rankings Section */}
+			<Card>
+				<CardHeader>
+					<CardTitle className="flex items-center gap-2">
+						📊 Value Rankings
+					</CardTitle>
+					<CardDescription>
+						How much value you're getting based on actual usage
+					</CardDescription>
+				</CardHeader>
+				<CardContent>
+					{!valueScores || valueScores.length === 0 ? (
+						<p className="text-muted-foreground text-sm">
+							Add subscriptions and log usage to see value rankings
 						</p>
 					) : (
 						<div className="space-y-3">
-							{alerts.slice(0, 5).map((alert, i) => (
-								<Link
-									key={`${alert.subscriptionId}-${i}`}
-									to="/subscriptions"
-									className={`block p-3 rounded-lg border-l-4 ${getAlertColor(alert.severity)} hover:shadow-sm transition-shadow`}
+							{valueScores.slice(0, 6).map((vs) => (
+								<div
+									key={vs.subscriptionId}
+									className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border hover:bg-muted/50 transition-colors"
 								>
-									<div className="flex items-start gap-2">
-										<span>{getAlertIcon(alert.severity)}</span>
+									<div className="flex items-center gap-4">
+										<span
+											className={cn(
+												"font-black text-2xl w-10 text-center",
+												getScoreColor(vs.score),
+											)}
+										>
+											{vs.score}
+										</span>
 										<div>
-											<p className="font-medium text-gray-900">
-												{alert.subscriptionName}
+											<p className="font-semibold text-gray-900">
+												{vs.subscriptionName}
 											</p>
-											<p className="text-sm text-gray-600">{alert.message}</p>
+											<p className="text-xs text-muted-foreground">
+												{vs.costPerUse !== null
+													? `$${(vs.costPerUse / 100).toFixed(2)}/use`
+													: "No usage data"}
+												{vs.monthlyUsage > 0 &&
+													` · ${vs.monthlyUsage} uses this month`}
+											</p>
 										</div>
 									</div>
-								</Link>
+									<Badge variant={getScoreBadgeVariant(vs.score)}>
+										{vs.score >= 70
+											? "Great"
+											: vs.score >= 40
+												? "OK"
+												: "Review"}
+									</Badge>
+								</div>
 							))}
-							{alerts.length > 5 && (
+							{valueScores.length > 6 && (
 								<Link
 									to="/analytics"
-									className="text-sm text-indigo-600 hover:underline"
+									className="block text-center text-sm text-primary hover:underline font-medium pt-4"
 								>
-									View all {alerts.length} alerts →
+									View all {valueScores.length} subscriptions →
 								</Link>
 							)}
 						</div>
 					)}
-				</div>
-
-				{/* Upcoming Bills Section */}
-				<div className="bg-white rounded-xl shadow-sm p-6">
-					<h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-						📅 Upcoming Bills (Next 14 Days)
-					</h3>
-					{!upcomingBills || upcomingBills.length === 0 ? (
-						<p className="text-gray-500 text-sm">
-							No upcoming bills in the next 14 days
-						</p>
-					) : (
-						<div className="space-y-3">
-							{upcomingBills.map((sub) => (
-								<div
-									key={sub.id}
-									className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-								>
-									<div>
-										<p className="font-medium text-gray-900">{sub.name}</p>
-										<p className="text-sm text-gray-500">
-											{sub.next_billing_date
-												? format(new Date(sub.next_billing_date), "MMM d, yyyy")
-												: "Unknown"}
-										</p>
-									</div>
-									<p className="font-semibold text-gray-900">
-										{formatCurrency(sub.cost_cents)}
-									</p>
-								</div>
-							))}
-						</div>
-					)}
-				</div>
-			</div>
-
-			{/* Value Rankings Section */}
-			<div className="bg-white rounded-xl shadow-sm p-6">
-				<h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-					📊 Value Rankings
-				</h3>
-				{!valueScores || valueScores.length === 0 ? (
-					<p className="text-gray-500 text-sm">
-						Add subscriptions and log usage to see value rankings
-					</p>
-				) : (
-					<div className="space-y-3">
-						{valueScores.slice(0, 6).map((vs) => (
-							<div
-								key={vs.subscriptionId}
-								className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-							>
-								<div className="flex items-center gap-3">
-									<span
-										className={`font-bold text-lg ${getScoreColor(vs.score)}`}
-									>
-										{vs.score}
-									</span>
-									<div>
-										<p className="font-medium text-gray-900">
-											{vs.subscriptionName}
-										</p>
-										<p className="text-sm text-gray-500">
-											{vs.costPerUse !== null
-												? `$${(vs.costPerUse / 100).toFixed(2)}/use`
-												: "No usage data"}
-											{vs.monthlyUsage > 0 &&
-												` · ${vs.monthlyUsage} uses this month`}
-										</p>
-									</div>
-								</div>
-								<span
-									className={`px-2 py-1 rounded text-xs font-medium ${getScoreBadge(vs.score)}`}
-								>
-									{vs.score >= 70 ? "Great" : vs.score >= 40 ? "OK" : "Review"}
-								</span>
-							</div>
-						))}
-						{valueScores.length > 6 && (
-							<Link
-								to="/analytics"
-								className="block text-center text-sm text-indigo-600 hover:underline pt-2"
-							>
-								View all {valueScores.length} subscriptions →
-							</Link>
-						)}
-					</div>
-				)}
-			</div>
+				</CardContent>
+			</Card>
 		</div>
 	);
 }
@@ -323,19 +357,26 @@ function StatCard({
 	valueColor?: string;
 }) {
 	return (
-		<div className="bg-white rounded-xl shadow-sm p-6">
-			<h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide">
-				{title}
-			</h3>
-			<p
-				className={`mt-2 text-3xl font-bold ${valueColor || "text-indigo-600"}`}
-			>
-				{loading ? (
-					<span className="inline-block w-20 h-8 bg-gray-200 animate-pulse rounded" />
-				) : (
-					value
-				)}
-			</p>
-		</div>
+		<Card>
+			<CardHeader className="pb-2">
+				<CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+					{title}
+				</CardTitle>
+			</CardHeader>
+			<CardContent>
+				<p
+					className={cn(
+						"text-3xl font-bold tracking-tight",
+						valueColor || "text-primary",
+					)}
+				>
+					{loading ? (
+						<span className="inline-block w-20 h-8 bg-muted animate-pulse rounded" />
+					) : (
+						value
+					)}
+				</p>
+			</CardContent>
+		</Card>
 	);
 }

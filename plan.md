@@ -8,17 +8,17 @@ A local-first app to track subscriptions, measure actual usage, and make data-dr
 
 ### Recommended Stack
 
-| Layer | Choice | Rationale |
-|-------|--------|-----------|
-| **Runtime** | Bun | Fast, TypeScript-native, built-in SQLite bindings |
-| **Framework** | TanStack Start | Full-stack React framework with type-safe routing, server functions, SSR/SPA flexibility |
-| **Router** | TanStack Router | File-based routing, type-safe params/search, built-in data loading |
-| **Database** | SQLite via `bun:sqlite` | Local-first, zero config, portable, easy backups |
-| **ORM** | Drizzle ORM | Type-safe, lightweight, excellent SQLite support |
-| **UI** | React + Tailwind + shadcn/ui | Fast to build, good defaults, accessible components |
-| **Data Fetching** | TanStack Query | Built into Start, handles caching, background refetching, optimistic updates |
-| **Charts** | Recharts or Tremor | Usage trends, spending visualizations |
-| **Date Handling** | date-fns | Lightweight, tree-shakeable |
+| Layer             | Choice                       | Rationale                                                                                |
+| ----------------- | ---------------------------- | ---------------------------------------------------------------------------------------- |
+| **Runtime**       | Bun                          | Fast, TypeScript-native, built-in SQLite bindings                                        |
+| **Framework**     | TanStack Start               | Full-stack React framework with type-safe routing, server functions, SSR/SPA flexibility |
+| **Router**        | TanStack Router              | File-based routing, type-safe params/search, built-in data loading                       |
+| **Database**      | SQLite via `bun:sqlite`      | Local-first, zero config, portable, easy backups                                         |
+| **ORM**           | Drizzle ORM                  | Type-safe, lightweight, excellent SQLite support                                         |
+| **UI**            | React + Tailwind + shadcn/ui | Fast to build, good defaults, accessible components                                      |
+| **Data Fetching** | TanStack Query               | Built into Start, handles caching, background refetching, optimistic updates             |
+| **Charts**        | Recharts or Tremor           | Usage trends, spending visualizations                                                    |
+| **Date Handling** | date-fns                     | Lightweight, tree-shakeable                                                              |
 
 ### Architecture Decisions
 
@@ -79,135 +79,145 @@ A local-first app to track subscriptions, measure actual usage, and make data-dr
 
 ```typescript
 // app/lib/db/schema.ts
-import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer, real } from "drizzle-orm/sqlite-core";
 
 // Main subscription record
-export const subscriptions = sqliteTable('subscriptions', {
-  id: text('id').primaryKey(), // nanoid
-  name: text('name').notNull(),
-  description: text('description'),
+export const subscriptions = sqliteTable("subscriptions", {
+   id: text("id").primaryKey(), // nanoid
+   name: text("name").notNull(),
+   description: text("description"),
 
-  // Cost & Billing
-  costCents: integer('cost_cents').notNull(), // Store in cents to avoid float issues
-  currency: text('currency').default('USD'),
-  billingFrequency: text('billing_frequency').notNull(), // 'monthly' | 'yearly' | 'weekly' | 'one-time'
-  billingDay: integer('billing_day'), // Day of month (1-31) or day of week (0-6)
-  nextBillingDate: integer('next_billing_date'), // Unix timestamp
+   // Cost & Billing
+   costCents: integer("cost_cents").notNull(), // Store in cents to avoid float issues
+   currency: text("currency").default("USD"),
+   billingFrequency: text("billing_frequency").notNull(), // 'monthly' | 'yearly' | 'weekly' | 'one-time'
+   billingDay: integer("billing_day"), // Day of month (1-31) or day of week (0-6)
+   nextBillingDate: integer("next_billing_date"), // Unix timestamp
 
-  // Categorization
-  category: text('category'), // 'streaming', 'productivity', 'gaming', 'news', 'fitness', etc.
-  tags: text('tags'), // JSON array of custom tags
+   // Categorization
+   category: text("category"), // 'streaming', 'productivity', 'gaming', 'news', 'fitness', etc.
+   tags: text("tags"), // JSON array of custom tags
 
-  // Usage tracking config
-  usageTrackingType: text('usage_tracking_type').notNull(), // 'manual' | 'api' | 'browser' | 'email'
-  usageTrackingConfig: text('usage_tracking_config'), // JSON config for automated tracking
-  expectedUsagePerMonth: integer('expected_usage_per_month'), // How often you expect to use it
+   // Usage tracking config
+   usageTrackingType: text("usage_tracking_type").notNull(), // 'manual' | 'api' | 'browser' | 'email'
+   usageTrackingConfig: text("usage_tracking_config"), // JSON config for automated tracking
+   expectedUsagePerMonth: integer("expected_usage_per_month"), // How often you expect to use it
 
-  // Cancellation info
-  cancellationDifficulty: text('cancellation_difficulty'), // 'easy' | 'medium' | 'hard' | 'nightmare'
-  cancellationNotes: text('cancellation_notes'), // "Requires phone call", "Must cancel 30 days before renewal"
-  cancellationUrl: text('cancellation_url'),
-  contractEndDate: integer('contract_end_date'), // For annual commitments
+   // Cancellation info
+   cancellationDifficulty: text("cancellation_difficulty"), // 'easy' | 'medium' | 'hard' | 'nightmare'
+   cancellationNotes: text("cancellation_notes"), // "Requires phone call", "Must cancel 30 days before renewal"
+   cancellationUrl: text("cancellation_url"),
+   contractEndDate: integer("contract_end_date"), // For annual commitments
 
-  // Status
-  status: text('status').default('active'), // 'active' | 'paused' | 'cancelled' | 'trial'
-  trialEndDate: integer('trial_end_date'),
+   // Status
+   status: text("status").default("active"), // 'active' | 'paused' | 'cancelled' | 'trial'
+   trialEndDate: integer("trial_end_date"),
 
-  // Metadata
-  createdAt: integer('created_at').notNull(),
-  updatedAt: integer('updated_at').notNull(),
-  iconUrl: text('icon_url'),
-  websiteUrl: text('website_url'),
+   // Metadata
+   createdAt: integer("created_at").notNull(),
+   updatedAt: integer("updated_at").notNull(),
+   iconUrl: text("icon_url"),
+   websiteUrl: text("website_url"),
 });
 
 // Individual usage events
-export const usageEvents = sqliteTable('usage_events', {
-  id: text('id').primaryKey(),
-  subscriptionId: text('subscription_id').notNull().references(() => subscriptions.id),
+export const usageEvents = sqliteTable("usage_events", {
+   id: text("id").primaryKey(),
+   subscriptionId: text("subscription_id")
+      .notNull()
+      .references(() => subscriptions.id),
 
-  timestamp: integer('timestamp').notNull(),
-  source: text('source').notNull(), // 'manual' | 'api' | 'browser' | 'email' | 'import'
+   timestamp: integer("timestamp").notNull(),
+   source: text("source").notNull(), // 'manual' | 'api' | 'browser' | 'email' | 'import'
 
-  // Flexible usage data
-  usageType: text('usage_type'), // 'session', 'action', 'content_consumed', 'feature_used'
-  quantity: real('quantity').default(1), // For countable things (articles read, hours watched)
-  unit: text('unit'), // 'hours', 'articles', 'sessions', 'gb', etc.
+   // Flexible usage data
+   usageType: text("usage_type"), // 'session', 'action', 'content_consumed', 'feature_used'
+   quantity: real("quantity").default(1), // For countable things (articles read, hours watched)
+   unit: text("unit"), // 'hours', 'articles', 'sessions', 'gb', etc.
 
-  // Optional context
-  notes: text('notes'),
-  metadata: text('metadata'), // JSON for source-specific data
+   // Optional context
+   notes: text("notes"),
+   metadata: text("metadata"), // JSON for source-specific data
 });
 
 // Aggregated usage stats (computed periodically)
-export const usageStats = sqliteTable('usage_stats', {
-  id: text('id').primaryKey(),
-  subscriptionId: text('subscription_id').notNull().references(() => subscriptions.id),
+export const usageStats = sqliteTable("usage_stats", {
+   id: text("id").primaryKey(),
+   subscriptionId: text("subscription_id")
+      .notNull()
+      .references(() => subscriptions.id),
 
-  periodType: text('period_type').notNull(), // 'day' | 'week' | 'month'
-  periodStart: integer('period_start').notNull(),
+   periodType: text("period_type").notNull(), // 'day' | 'week' | 'month'
+   periodStart: integer("period_start").notNull(),
 
-  totalEvents: integer('total_events').default(0),
-  totalQuantity: real('total_quantity').default(0),
+   totalEvents: integer("total_events").default(0),
+   totalQuantity: real("total_quantity").default(0),
 
-  // Computed metrics
-  costPerUse: real('cost_per_use'), // Cost for this period / events
-  valueScore: real('value_score'), // 0-100 based on usage vs cost
+   // Computed metrics
+   costPerUse: real("cost_per_use"), // Cost for this period / events
+   valueScore: real("value_score"), // 0-100 based on usage vs cost
 });
 
 // Categories with overlap detection
-export const categories = sqliteTable('categories', {
-  id: text('id').primaryKey(),
-  name: text('name').notNull(),
-  description: text('description'),
-  parentId: text('parent_id'), // For hierarchical categories
+export const categories = sqliteTable("categories", {
+   id: text("id").primaryKey(),
+   name: text("name").notNull(),
+   description: text("description"),
+   parentId: text("parent_id"), // For hierarchical categories
 
-  // For overlap detection
-  similarCategories: text('similar_categories'), // JSON array of related category IDs
+   // For overlap detection
+   similarCategories: text("similar_categories"), // JSON array of related category IDs
 });
 
 // Service overlap mappings (e.g., Netflix and Hulu both do streaming)
-export const serviceOverlaps = sqliteTable('service_overlaps', {
-  id: text('id').primaryKey(),
-  subscriptionId1: text('subscription_id_1').notNull().references(() => subscriptions.id),
-  subscriptionId2: text('subscription_id_2').notNull().references(() => subscriptions.id),
+export const serviceOverlaps = sqliteTable("service_overlaps", {
+   id: text("id").primaryKey(),
+   subscriptionId1: text("subscription_id_1")
+      .notNull()
+      .references(() => subscriptions.id),
+   subscriptionId2: text("subscription_id_2")
+      .notNull()
+      .references(() => subscriptions.id),
 
-  overlapType: text('overlap_type'), // 'full' | 'partial' | 'complementary'
-  overlapPercentage: integer('overlap_percentage'), // 0-100, how much they overlap
-  notes: text('notes'), // "Both have Marvel content"
+   overlapType: text("overlap_type"), // 'full' | 'partial' | 'complementary'
+   overlapPercentage: integer("overlap_percentage"), // 0-100, how much they overlap
+   notes: text("notes"), // "Both have Marvel content"
 
-  createdAt: integer('created_at').notNull(),
+   createdAt: integer("created_at").notNull(),
 });
 
 // Decision log (track when you evaluated subscriptions)
-export const decisionLog = sqliteTable('decision_log', {
-  id: text('id').primaryKey(),
-  subscriptionId: text('subscription_id').notNull().references(() => subscriptions.id),
+export const decisionLog = sqliteTable("decision_log", {
+   id: text("id").primaryKey(),
+   subscriptionId: text("subscription_id")
+      .notNull()
+      .references(() => subscriptions.id),
 
-  decisionDate: integer('decision_date').notNull(),
-  decision: text('decision').notNull(), // 'keep' | 'cancel' | 'downgrade' | 'pause' | 'review_later'
-  reasoning: text('reasoning'),
+   decisionDate: integer("decision_date").notNull(),
+   decision: text("decision").notNull(), // 'keep' | 'cancel' | 'downgrade' | 'pause' | 'review_later'
+   reasoning: text("reasoning"),
 
-  // Snapshot of metrics at decision time
-  costAtDecision: integer('cost_at_decision'),
-  usageAtDecision: real('usage_at_decision'),
-  valueScoreAtDecision: real('value_score_at_decision'),
+   // Snapshot of metrics at decision time
+   costAtDecision: integer("cost_at_decision"),
+   usageAtDecision: real("usage_at_decision"),
+   valueScoreAtDecision: real("value_score_at_decision"),
 
-  // Follow-up
-  reviewDate: integer('review_date'), // When to reconsider
+   // Follow-up
+   reviewDate: integer("review_date"), // When to reconsider
 });
 
 // Integration tokens (for API-based tracking)
-export const integrations = sqliteTable('integrations', {
-  id: text('id').primaryKey(),
-  serviceName: text('service_name').notNull(), // 'spotify', 'netflix', 'github', etc.
+export const integrations = sqliteTable("integrations", {
+   id: text("id").primaryKey(),
+   serviceName: text("service_name").notNull(), // 'spotify', 'netflix', 'github', etc.
 
-  accessToken: text('access_token'), // Encrypted
-  refreshToken: text('refresh_token'), // Encrypted
-  expiresAt: integer('expires_at'),
+   accessToken: text("access_token"), // Encrypted
+   refreshToken: text("refresh_token"), // Encrypted
+   expiresAt: integer("expires_at"),
 
-  lastSyncAt: integer('last_sync_at'),
-  syncStatus: text('sync_status'), // 'active' | 'error' | 'expired'
-  syncError: text('sync_error'),
+   lastSyncAt: integer("last_sync_at"),
+   syncStatus: text("sync_status"), // 'active' | 'error' | 'expired'
+   syncError: text("sync_error"),
 });
 ```
 
@@ -215,11 +225,22 @@ export const integrations = sqliteTable('integrations', {
 
 ```typescript
 // app/lib/db/schema.ts (add to schema file)
-export const subscriptionsByStatus = index('idx_subscriptions_status').on(subscriptions.status);
-export const subscriptionsByNextBilling = index('idx_subscriptions_next_billing').on(subscriptions.nextBillingDate);
-export const usageEventsBySubscription = index('idx_usage_events_subscription').on(usageEvents.subscriptionId);
-export const usageEventsByTimestamp = index('idx_usage_events_timestamp').on(usageEvents.timestamp);
-export const usageStatsByPeriod = index('idx_usage_stats_period').on(usageStats.subscriptionId, usageStats.periodStart);
+export const subscriptionsByStatus = index("idx_subscriptions_status").on(
+   subscriptions.status
+);
+export const subscriptionsByNextBilling = index(
+   "idx_subscriptions_next_billing"
+).on(subscriptions.nextBillingDate);
+export const usageEventsBySubscription = index(
+   "idx_usage_events_subscription"
+).on(usageEvents.subscriptionId);
+export const usageEventsByTimestamp = index("idx_usage_events_timestamp").on(
+   usageEvents.timestamp
+);
+export const usageStatsByPeriod = index("idx_usage_stats_period").on(
+   usageStats.subscriptionId,
+   usageStats.periodStart
+);
 ```
 
 ---
@@ -230,48 +251,48 @@ export const usageStatsByPeriod = index('idx_usage_stats_period').on(usageStats.
 
 Must-haves to start using the app yourself:
 
-| Feature | Priority | Effort |
-|---------|----------|--------|
-| Add/edit/delete subscriptions | P0 | S |
-| Manual usage logging (quick "I used this today" button) | P0 | S |
-| Dashboard with total monthly/yearly spend | P0 | S |
-| List view with next billing dates | P0 | S |
-| Basic cost-per-use calculation | P0 | M |
-| Category assignment | P1 | S |
-| Billing reminders (upcoming renewals) | P1 | M |
-| Data export (JSON/CSV) | P1 | S |
+| Feature                                                 | Priority | Effort |
+| ------------------------------------------------------- | -------- | ------ |
+| Add/edit/delete subscriptions                           | P0       | S      |
+| Manual usage logging (quick "I used this today" button) | P0       | S      |
+| Dashboard with total monthly/yearly spend               | P0       | S      |
+| List view with next billing dates                       | P0       | S      |
+| Basic cost-per-use calculation                          | P0       | M      |
+| Category assignment                                     | P1       | S      |
+| Billing reminders (upcoming renewals)                   | P1       | M      |
+| Data export (JSON/CSV)                                  | P1       | S      |
 
 ### Phase 2 - Usage Intelligence
 
-| Feature | Priority | Effort |
-|---------|----------|--------|
-| Usage trend charts (per subscription) | P1 | M |
-| "Haven't used in X days" alerts | P1 | S |
-| Value score calculation | P1 | M |
-| Spending by category breakdown | P1 | S |
-| Service overlap detection (manual tagging) | P2 | M |
-| Cancellation difficulty tracking | P2 | S |
+| Feature                                    | Priority | Effort |
+| ------------------------------------------ | -------- | ------ |
+| Usage trend charts (per subscription)      | P1       | M      |
+| "Haven't used in X days" alerts            | P1       | S      |
+| Value score calculation                    | P1       | M      |
+| Spending by category breakdown             | P1       | S      |
+| Service overlap detection (manual tagging) | P2       | M      |
+| Cancellation difficulty tracking           | P2       | S      |
 
 ### Phase 3 - Automated Tracking
 
-| Feature | Priority | Effort |
-|---------|----------|--------|
-| Browser extension for usage detection | P2 | L |
-| Spotify API integration | P2 | M |
-| GitHub/GitLab API integration | P2 | M |
-| Email parsing for usage reports | P3 | L |
-| MCP server for AI assistant integration | P3 | M |
+| Feature                                 | Priority | Effort |
+| --------------------------------------- | -------- | ------ |
+| Browser extension for usage detection   | P2       | L      |
+| Spotify API integration                 | P2       | M      |
+| GitHub/GitLab API integration           | P2       | M      |
+| Email parsing for usage reports         | P3       | L      |
+| MCP server for AI assistant integration | P3       | M      |
 
 ### Phase 4 - Decision Engine
 
-| Feature | Priority | Effort |
-|---------|----------|--------|
-| Recommendation engine ("consider cancelling") | P2 | M |
-| ROI comparisons between overlapping services | P2 | M |
-| Decision logging with reasoning | P2 | S |
-| Cancellation workflow tracker | P2 | M |
-| "What if I cancelled X?" projections | P3 | S |
-| Seasonal pattern detection | P3 | M |
+| Feature                                       | Priority | Effort |
+| --------------------------------------------- | -------- | ------ |
+| Recommendation engine ("consider cancelling") | P2       | M      |
+| ROI comparisons between overlapping services  | P2       | M      |
+| Decision logging with reasoning               | P2       | S      |
+| Cancellation workflow tracker                 | P2       | M      |
+| "What if I cancelled X?" projections          | P3       | S      |
+| Seasonal pattern detection                    | P3       | M      |
 
 ### Nice-to-Haves (Backlog)
 
@@ -429,43 +450,43 @@ Milestone 4.3: ROI Analysis
 
 ### Tier 1: API Integrations (Most Reliable)
 
-| Service | API Availability | Data Points |
-|---------|-----------------|-------------|
-| **Spotify** | Excellent | Listening history, hours, top artists |
-| **GitHub** | Excellent | Commits, PRs, Copilot usage (limited) |
-| **Strava** | Good | Activities, frequency |
-| **Todoist** | Good | Tasks completed |
-| **Notion** | Limited | Page views (via embed tracking) |
-| **Slack** | Limited | Messages sent (workspace admin needed) |
+| Service     | API Availability | Data Points                            |
+| ----------- | ---------------- | -------------------------------------- |
+| **Spotify** | Excellent        | Listening history, hours, top artists  |
+| **GitHub**  | Excellent        | Commits, PRs, Copilot usage (limited)  |
+| **Strava**  | Good             | Activities, frequency                  |
+| **Todoist** | Good             | Tasks completed                        |
+| **Notion**  | Limited          | Page views (via embed tracking)        |
+| **Slack**   | Limited          | Messages sent (workspace admin needed) |
 
 **Implementation Pattern:**
 
 ```typescript
 // app/lib/integrations/spotify.ts
 interface SpotifyIntegration {
-  authenticate(): Promise<void>;
-  fetchRecentlyPlayed(since: Date): Promise<PlayedTrack[]>;
-  calculateUsageHours(tracks: PlayedTrack[]): number;
+   authenticate(): Promise<void>;
+   fetchRecentlyPlayed(since: Date): Promise<PlayedTrack[]>;
+   calculateUsageHours(tracks: PlayedTrack[]): number;
 }
 
 export class SpotifyTracker implements SpotifyIntegration {
-  async syncUsage(subscriptionId: string) {
-    const lastSync = await this.getLastSyncDate(subscriptionId);
-    const tracks = await this.fetchRecentlyPlayed(lastSync);
+   async syncUsage(subscriptionId: string) {
+      const lastSync = await this.getLastSyncDate(subscriptionId);
+      const tracks = await this.fetchRecentlyPlayed(lastSync);
 
-    const hours = this.calculateUsageHours(tracks);
+      const hours = this.calculateUsageHours(tracks);
 
-    await db.insert(usageEvents).values({
-      id: nanoid(),
-      subscriptionId,
-      timestamp: Date.now(),
-      source: 'api',
-      usageType: 'session',
-      quantity: hours,
-      unit: 'hours',
-      metadata: JSON.stringify({ trackCount: tracks.length }),
-    });
-  }
+      await db.insert(usageEvents).values({
+         id: nanoid(),
+         subscriptionId,
+         timestamp: Date.now(),
+         source: "api",
+         usageType: "session",
+         quantity: hours,
+         unit: "hours",
+         metadata: JSON.stringify({ trackCount: tracks.length }),
+      });
+   }
 }
 ```
 
@@ -502,11 +523,11 @@ export class SpotifyTracker implements SpotifyIntegration {
 ```typescript
 // In extension settings or synced from main app
 const domainMappings = {
-  'netflix.com': 'sub_netflix_123',
-  'open.spotify.com': 'sub_spotify_456',
-  'github.com': 'sub_github_789',
-  'notion.so': 'sub_notion_012',
-  // User-configurable
+   "netflix.com": "sub_netflix_123",
+   "open.spotify.com": "sub_spotify_456",
+   "github.com": "sub_github_789",
+   "notion.so": "sub_notion_012",
+   // User-configurable
 };
 ```
 
@@ -514,38 +535,38 @@ const domainMappings = {
 
 Many services send usage summary emails:
 
-| Service | Email Type | Frequency |
-|---------|-----------|-----------|
-| Netflix | "What you watched" | Monthly |
-| Spotify | Wrapped, monthly stats | Yearly/Monthly |
-| Audible | Listening stats | Monthly |
-| Kindle Unlimited | Books read | Monthly |
-| Apple (Screen Time) | Weekly report | Weekly |
+| Service             | Email Type             | Frequency      |
+| ------------------- | ---------------------- | -------------- |
+| Netflix             | "What you watched"     | Monthly        |
+| Spotify             | Wrapped, monthly stats | Yearly/Monthly |
+| Audible             | Listening stats        | Monthly        |
+| Kindle Unlimited    | Books read             | Monthly        |
+| Apple (Screen Time) | Weekly report          | Weekly         |
 
 **Implementation Approach:**
 
 ```typescript
 // app/lib/integrations/email-parser.ts
 interface EmailParser {
-  serviceId: string;
-  patterns: {
-    sender: string[];
-    subjectContains: string[];
-  };
-  parse(emailBody: string): UsageData | null;
+   serviceId: string;
+   patterns: {
+      sender: string[];
+      subjectContains: string[];
+   };
+   parse(emailBody: string): UsageData | null;
 }
 
 const netflixParser: EmailParser = {
-  serviceId: 'netflix',
-  patterns: {
-    sender: ['info@netflix.com'],
-    subjectContains: ['watched', 'viewing activity'],
-  },
-  parse(body) {
-    // Extract hours watched, shows viewed
-    const hoursMatch = body.match(/(\d+)\s*hours?\s*watched/i);
-    return hoursMatch ? { hours: parseInt(hoursMatch[1]) } : null;
-  },
+   serviceId: "netflix",
+   patterns: {
+      sender: ["info@netflix.com"],
+      subjectContains: ["watched", "viewing activity"],
+   },
+   parse(body) {
+      // Extract hours watched, shows viewed
+      const hoursMatch = body.match(/(\d+)\s*hours?\s*watched/i);
+      return hoursMatch ? { hours: parseInt(hoursMatch[1]) } : null;
+   },
 };
 ```
 
@@ -736,57 +757,66 @@ export function QuickLogButton({ subscription }: { subscription: Subscription })
 ### Formula
 
 ```typescript
-function calculateValueScore(subscription: Subscription, stats: UsageStats): number {
-  // Base score from usage frequency
-  const usageScore = calculateUsageScore(stats, subscription.expectedUsagePerMonth);
+function calculateValueScore(
+   subscription: Subscription,
+   stats: UsageStats
+): number {
+   // Base score from usage frequency
+   const usageScore = calculateUsageScore(
+      stats,
+      subscription.expectedUsagePerMonth
+   );
 
-  // Adjust for cost efficiency
-  const costScore = calculateCostScore(stats.costPerUse, getCategoryBenchmark(subscription.category));
+   // Adjust for cost efficiency
+   const costScore = calculateCostScore(
+      stats.costPerUse,
+      getCategoryBenchmark(subscription.category)
+   );
 
-  // Adjust for overlap
-  const overlapPenalty = calculateOverlapPenalty(subscription);
+   // Adjust for overlap
+   const overlapPenalty = calculateOverlapPenalty(subscription);
 
-  // Adjust for trend
-  const trendBonus = calculateTrendBonus(stats.usageTrend);
+   // Adjust for trend
+   const trendBonus = calculateTrendBonus(stats.usageTrend);
 
-  // Combine with weights
-  const rawScore = (
-    usageScore * 0.4 +
-    costScore * 0.3 +
-    (100 - overlapPenalty) * 0.15 +
-    (50 + trendBonus) * 0.15
-  );
+   // Combine with weights
+   const rawScore =
+      usageScore * 0.4 +
+      costScore * 0.3 +
+      (100 - overlapPenalty) * 0.15 +
+      (50 + trendBonus) * 0.15;
 
-  return Math.round(Math.max(0, Math.min(100, rawScore)));
+   return Math.round(Math.max(0, Math.min(100, rawScore)));
 }
 
 function calculateUsageScore(stats: UsageStats, expected: number): number {
-  if (!expected) return stats.totalEvents > 0 ? 50 : 0;
-  const ratio = stats.totalEvents / expected;
-  // 100% of expected = 80 points, 150%+ = 100 points
-  return Math.min(100, ratio * 80);
+   if (!expected) return stats.totalEvents > 0 ? 50 : 0;
+   const ratio = stats.totalEvents / expected;
+   // 100% of expected = 80 points, 150%+ = 100 points
+   return Math.min(100, ratio * 80);
 }
 
 function calculateCostScore(costPerUse: number, benchmark: number): number {
-  if (!benchmark) return 50;
-  // At or below benchmark = 100, 2x benchmark = 50, 5x+ = 0
-  const ratio = costPerUse / benchmark;
-  return Math.max(0, 100 - (ratio - 1) * 25);
+   if (!benchmark) return 50;
+   // At or below benchmark = 100, 2x benchmark = 50, 5x+ = 0
+   const ratio = costPerUse / benchmark;
+   return Math.max(0, 100 - (ratio - 1) * 25);
 }
 ```
 
 ### Category Benchmarks
 
 ```typescript
-const categoryBenchmarks: Record<string, { costPerUse: number; unit: string }> = {
-  streaming: { costPerUse: 2.00, unit: 'show/movie' },
-  music: { costPerUse: 0.20, unit: 'hour' },
-  fitness: { costPerUse: 10.00, unit: 'session' },
-  productivity: { costPerUse: 1.00, unit: 'day' },
-  news: { costPerUse: 0.50, unit: 'article' },
-  gaming: { costPerUse: 1.00, unit: 'hour' },
-  education: { costPerUse: 5.00, unit: 'lesson' },
-};
+const categoryBenchmarks: Record<string, { costPerUse: number; unit: string }> =
+   {
+      streaming: { costPerUse: 2.0, unit: "show/movie" },
+      music: { costPerUse: 0.2, unit: "hour" },
+      fitness: { costPerUse: 10.0, unit: "session" },
+      productivity: { costPerUse: 1.0, unit: "day" },
+      news: { costPerUse: 0.5, unit: "article" },
+      gaming: { costPerUse: 1.0, unit: "hour" },
+      education: { costPerUse: 5.0, unit: "lesson" },
+   };
 ```
 
 ---
@@ -797,46 +827,63 @@ Build an MCP server so AI assistants can query your subscription data:
 
 ```typescript
 // mcp/subscription-server.ts
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
 const server = new McpServer({
-  name: 'subscription-tracker',
-  version: '1.0.0',
+   name: "subscription-tracker",
+   version: "1.0.0",
 });
 
 // Tool: Get spending summary
-server.tool('get_spending_summary', {
-  period: { type: 'string', enum: ['month', 'year'] }
-}, async ({ period }) => {
-  const data = await getSpendingSummary(period);
-  return { content: [{ type: 'text', text: JSON.stringify(data) }] };
-});
+server.tool(
+   "get_spending_summary",
+   {
+      period: { type: "string", enum: ["month", "year"] },
+   },
+   async ({ period }) => {
+      const data = await getSpendingSummary(period);
+      return { content: [{ type: "text", text: JSON.stringify(data) }] };
+   }
+);
 
 // Tool: Find subscriptions to cut
-server.tool('find_subscriptions_to_cut', {
-  min_savings: { type: 'number', description: 'Minimum monthly savings' }
-}, async ({ min_savings }) => {
-  const recommendations = await getRecommendations(min_savings);
-  return { content: [{ type: 'text', text: JSON.stringify(recommendations) }] };
-});
+server.tool(
+   "find_subscriptions_to_cut",
+   {
+      min_savings: { type: "number", description: "Minimum monthly savings" },
+   },
+   async ({ min_savings }) => {
+      const recommendations = await getRecommendations(min_savings);
+      return {
+         content: [{ type: "text", text: JSON.stringify(recommendations) }],
+      };
+   }
+);
 
 // Tool: Log usage
-server.tool('log_usage', {
-  subscription_name: { type: 'string' },
-  notes: { type: 'string', optional: true }
-}, async ({ subscription_name, notes }) => {
-  await logUsage(subscription_name, notes);
-  return { content: [{ type: 'text', text: 'Usage logged' }] };
-});
+server.tool(
+   "log_usage",
+   {
+      subscription_name: { type: "string" },
+      notes: { type: "string", optional: true },
+   },
+   async ({ subscription_name, notes }) => {
+      await logUsage(subscription_name, notes);
+      return { content: [{ type: "text", text: "Usage logged" }] };
+   }
+);
 
 // Resource: Current subscriptions
-server.resource('subscriptions://all', async () => {
-  const subs = await getAllSubscriptions();
-  return { contents: [{ uri: 'subscriptions://all', text: JSON.stringify(subs) }] };
+server.resource("subscriptions://all", async () => {
+   const subs = await getAllSubscriptions();
+   return {
+      contents: [{ uri: "subscriptions://all", text: JSON.stringify(subs) }],
+   };
 });
 ```
 
 **Use Cases:**
+
 - "Hey Claude, how much am I spending on subscriptions?"
 - "Which subscriptions should I cancel to save $100/month?"
 - "Log that I used Netflix today"
@@ -953,31 +1000,43 @@ function SubscriptionDetail() {
 
 ```typescript
 // app/server/subscriptions.server.ts - Server functions
-import { createServerFn } from '@tanstack/start'
-import { db } from '~/lib/db'
-import { subscriptions } from '~/lib/db/schema'
-import { eq } from 'drizzle-orm'
+import { createServerFn } from "@tanstack/start";
+import { db } from "~/lib/db";
+import { subscriptions } from "~/lib/db/schema";
+import { eq } from "drizzle-orm";
 
-export const getSubscription = createServerFn('GET', async ({ id }: { id: string }) => {
-  const result = await db.select().from(subscriptions).where(eq(subscriptions.id, id))
-  return result[0]
-})
+export const getSubscription = createServerFn(
+   "GET",
+   async ({ id }: { id: string }) => {
+      const result = await db
+         .select()
+         .from(subscriptions)
+         .where(eq(subscriptions.id, id));
+      return result[0];
+   }
+);
 
-export const createSubscription = createServerFn('POST', async (data: NewSubscription) => {
-  const id = nanoid()
-  await db.insert(subscriptions).values({ ...data, id })
-  return { id }
-})
+export const createSubscription = createServerFn(
+   "POST",
+   async (data: NewSubscription) => {
+      const id = nanoid();
+      await db.insert(subscriptions).values({ ...data, id });
+      return { id };
+   }
+);
 
-export const logUsage = createServerFn('POST', async ({ subscriptionId, quantity = 1 }) => {
-  await db.insert(usageEvents).values({
-    id: nanoid(),
-    subscriptionId,
-    timestamp: Date.now(),
-    source: 'manual',
-    quantity,
-  })
-})
+export const logUsage = createServerFn(
+   "POST",
+   async ({ subscriptionId, quantity = 1 }) => {
+      await db.insert(usageEvents).values({
+         id: nanoid(),
+         subscriptionId,
+         timestamp: Date.now(),
+         source: "manual",
+         quantity,
+      });
+   }
+);
 ```
 
 ---
@@ -1025,41 +1084,41 @@ bun dev
 
 ```typescript
 // app.config.ts
-import { defineConfig } from '@tanstack/start/config'
+import { defineConfig } from "@tanstack/start/config";
 
 export default defineConfig({
-  vite: {
-    resolve: {
-      alias: {
-        '~': './app',
+   vite: {
+      resolve: {
+         alias: {
+            "~": "./app",
+         },
       },
-    },
-  },
-})
+   },
+});
 ```
 
 ```typescript
 // app/lib/db/index.ts - Database connection with bun:sqlite
-import { Database } from 'bun:sqlite'
-import { drizzle } from 'drizzle-orm/bun-sqlite'
-import * as schema from './schema'
+import { Database } from "bun:sqlite";
+import { drizzle } from "drizzle-orm/bun-sqlite";
+import * as schema from "./schema";
 
-const sqlite = new Database('subscriptions.db')
-export const db = drizzle(sqlite, { schema })
+const sqlite = new Database("subscriptions.db");
+export const db = drizzle(sqlite, { schema });
 ```
 
 ```typescript
 // drizzle.config.ts
-import { defineConfig } from 'drizzle-kit'
+import { defineConfig } from "drizzle-kit";
 
 export default defineConfig({
-  schema: './app/lib/db/schema.ts',
-  out: './app/lib/db/migrations',
-  dialect: 'sqlite',
-  dbCredentials: {
-    url: 'subscriptions.db',
-  },
-})
+   schema: "./app/lib/db/schema.ts",
+   out: "./app/lib/db/migrations",
+   dialect: "sqlite",
+   dbCredentials: {
+      url: "subscriptions.db",
+   },
+});
 ```
 
 ---
