@@ -83,7 +83,8 @@ export function CSVImportDialog() {
 					<DialogTitle>Import Subscriptions from CSV</DialogTitle>
 					<DialogDescription>
 						Upload a CSV file with columns: name, cost, frequency (optional),
-						category (optional), description (optional)
+						category (optional), description (optional), nextBillingDate
+						(optional)
 					</DialogDescription>
 				</DialogHeader>
 
@@ -122,7 +123,9 @@ export function CSVImportDialog() {
 										{result.imported !== 1 ? "s" : ""}
 									</span>
 								) : (
-									<span className="text-destructive">No subscriptions imported</span>
+									<span className="text-destructive">
+										No subscriptions imported
+									</span>
 								)}
 							</p>
 							{result.errors.length > 0 && (
@@ -143,10 +146,10 @@ export function CSVImportDialog() {
 					<div className="bg-muted/50 rounded-md p-3 text-xs">
 						<p className="font-medium mb-1">Example CSV format:</p>
 						<pre className="text-muted-foreground">
-							{`name,cost,frequency,category
-Netflix,$15.49,monthly,streaming
-Spotify,$10.99,monthly,music
-GitHub Pro,$4.00,monthly,productivity`}
+							{`name,cost,frequency,category,nextBillingDate
+Netflix,$15.49,monthly,streaming,2026-02-15
+Spotify,$10.99,monthly,music,2026-01-20
+GitHub Pro,$4.00,monthly,productivity,2026-02-01`}
 						</pre>
 					</div>
 				</div>

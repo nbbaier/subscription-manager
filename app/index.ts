@@ -9,6 +9,7 @@ import {
 	type SpotifySyncResult,
 } from "./lib/integrations/spotify.ts";
 import { AnalyticsService } from "./lib/services/analytics.ts";
+import { CSVImportService } from "./lib/services/csv-import.ts";
 import { DecisionService } from "./lib/services/decision.ts";
 import { DomainMappingService } from "./lib/services/domain-mapping.ts";
 import {
@@ -20,7 +21,6 @@ import { RecommendationService } from "./lib/services/recommendation.ts";
 import { ROIService } from "./lib/services/roi.ts";
 import { SubscriptionService } from "./lib/services/subscription.ts";
 import { UsageService } from "./lib/services/usage.ts";
-import { CSVImportService } from "./lib/services/csv-import.ts";
 
 // Initialize database on startup
 initializeDatabase();
@@ -895,20 +895,7 @@ const server = Bun.serve({
 				});
 			}
 
-			// Serve static HTML
-			if (path === "/" || path === "/index.html") {
-				const html = await Bun.file("./public/index.html").text();
-				return new Response(html, {
-					headers: { "Content-Type": "text/html" },
-				});
-			}
-
-			// Serve static files from public directory
-			if (path.startsWith("/public/")) {
-				const file = Bun.file(`.${path}`);
-				return new Response(file);
-			}
-
+			// API-only server - React app served separately via Vite
 			return new Response("Not Found", { status: 404 });
 		} catch (error) {
 			console.error("Error handling request:", error);
@@ -927,7 +914,7 @@ const server = Bun.serve({
 });
 
 console.log(
-	`🚀 Subscription Manager running at http://localhost:${server.port}`,
+	`🚀 Subscription Manager API running at http://localhost:${server.port}`,
 );
-console.log(`📊 Dashboard: http://localhost:${server.port}/`);
 console.log(`🔌 API: http://localhost:${server.port}/api/subscriptions`);
+console.log(`📊 React app: http://localhost:3001/`);

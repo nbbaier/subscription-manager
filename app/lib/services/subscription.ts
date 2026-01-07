@@ -28,6 +28,7 @@ export interface NewSubscription {
 	billingFrequency: "monthly" | "yearly" | "weekly" | "one-time";
 	category?: string;
 	usageTrackingType?: "manual" | "api" | "browser" | "email";
+	nextBillingDate?: number;
 }
 
 function getAllSubscriptions(): Subscription[] {
@@ -62,6 +63,7 @@ function createSubscription(data: NewSubscription): Subscription {
 		billingFrequency: data.billingFrequency,
 		category: data.category,
 		usageTrackingType: data.usageTrackingType || "manual",
+		nextBillingDate: data.nextBillingDate,
 		status: "active",
 		createdAt: now,
 		updatedAt: now,
@@ -70,8 +72,8 @@ function createSubscription(data: NewSubscription): Subscription {
 	const query = db.prepare(`
       INSERT INTO subscriptions (
         id, name, description, cost_cents, currency, billing_frequency,
-        category, usage_tracking_type, status, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        category, usage_tracking_type, next_billing_date, status, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
 	query.run(
@@ -83,6 +85,7 @@ function createSubscription(data: NewSubscription): Subscription {
 		subscription.billingFrequency,
 		subscription.category || null,
 		subscription.usageTrackingType,
+		subscription.nextBillingDate || null,
 		subscription.status || "active",
 		subscription.createdAt,
 		subscription.updatedAt,
@@ -107,7 +110,7 @@ function updateSubscription(
 	const query = db.prepare(`
       UPDATE subscriptions
       SET name = ?, description = ?, cost_cents = ?, billing_frequency = ?,
-          category = ?, status = ?, updated_at = ?
+          next_billing_date = ?, category = ?, status = ?, website_url = ?, updated_at = ?
       WHERE id = ?
     `);
 
@@ -116,8 +119,10 @@ function updateSubscription(
 		updated.description || null,
 		updated.costCents,
 		updated.billingFrequency,
+		updated.nextBillingDate || null,
 		updated.category || null,
 		updated.status || "active",
+		updated.websiteUrl || null,
 		updated.updatedAt,
 		id,
 	);
