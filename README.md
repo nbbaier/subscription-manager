@@ -59,13 +59,21 @@ subscription-manager/
    bun run db:push
    ```
 
-3. **Start the development server:**
+3. **Start the development servers:**
+   
+   You need to run both the frontend and API server in separate terminals:
+   
    ```bash
+   # Terminal 1 - Frontend (Vite)
    bun run dev
+   
+   # Terminal 2 - API server
+   bun run dev:api
    ```
 
 4. **Open the app:**
-   Visit [http://localhost:3000](http://localhost:3000) in your browser
+   - Frontend: [http://localhost:5173](http://localhost:5173)
+   - API: [http://localhost:3000](http://localhost:3000)
 
 The SQLite database (`subscriptions.db`) is created automatically and stored locally.
 

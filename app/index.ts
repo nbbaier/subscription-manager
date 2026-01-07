@@ -20,6 +20,7 @@ import { RecommendationService } from "./lib/services/recommendation.ts";
 import { ROIService } from "./lib/services/roi.ts";
 import { SubscriptionService } from "./lib/services/subscription.ts";
 import { UsageService } from "./lib/services/usage.ts";
+import { CSVImportService } from "./lib/services/csv-import.ts";
 
 // Initialize database on startup
 initializeDatabase();
@@ -94,6 +95,39 @@ const server = Bun.serve({
 					const subscription = SubscriptionService.createSubscription(data);
 					return new Response(JSON.stringify(subscription), {
 						status: 201,
+						headers,
+					});
+				}
+
+				// POST /api/subscriptions/import-csv - Import subscriptions from CSV
+				if (path === "/api/subscriptions/import-csv" && req.method === "POST") {
+					const contentType = req.headers.get("content-type") || "";
+					let csvContent: string;
+
+					if (contentType.includes("multipart/form-data")) {
+						const formData = await req.formData();
+						const file = formData.get("file");
+						if (!file || !(file instanceof File)) {
+							return new Response(
+								JSON.stringify({ error: "No file provided" }),
+								{ status: 400, headers },
+							);
+						}
+						csvContent = await file.text();
+					} else {
+						const body = await req.json();
+						csvContent = body.csv;
+						if (!csvContent) {
+							return new Response(
+								JSON.stringify({ error: "No CSV content provided" }),
+								{ status: 400, headers },
+							);
+						}
+					}
+
+					const result = CSVImportService.importFromCSV(csvContent);
+					return new Response(JSON.stringify(result), {
+						status: result.imported > 0 ? 201 : 400,
 						headers,
 					});
 				}

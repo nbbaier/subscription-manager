@@ -3,6 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
+import { CSVImportDialog } from "@/components/csv-import-dialog";
 import {
 	Table,
 	TableBody,
@@ -76,12 +77,15 @@ function Subscriptions() {
 		<div className="space-y-6">
 			<div className="flex items-center justify-between">
 				<h2 className="text-3xl font-bold text-gray-900">Subscriptions</h2>
-				<Link
-					to="/subscriptions"
-					className={cn(buttonVariants({ variant: "default" }))}
-				>
-					+ Add Subscription
-				</Link>
+				<div className="flex items-center gap-2">
+					<CSVImportDialog />
+					<Link
+						to="/subscriptions"
+						className={cn(buttonVariants({ variant: "default" }))}
+					>
+						+ Add Subscription
+					</Link>
+				</div>
 			</div>
 
 			<div className="bg-white rounded-xl shadow-sm border overflow-hidden">
